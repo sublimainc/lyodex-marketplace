@@ -1,0 +1,2048 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: LyoDex API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: operators
+    description: Freeze-dry operator management
+  - name: requests
+    description: Buyer freeze-dry requests
+  - name: bids
+    description: Operator bids on requests
+  - name: dashboard
+    description: Dashboard summaries
+  - name: Storage
+    description: Object storage upload and serving endpoints.
+  - name: admin
+    description: Admin CRUD management endpoints (requires admin session)
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /operators:
+    get:
+      operationId: listOperators
+      tags: [operators]
+      summary: List all operators
+      responses:
+        "200":
+          description: List of operators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Operator"
+    post:
+      operationId: createOperator
+      tags: [operators]
+      summary: Create a new operator profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OperatorInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+
+  /operators/me:
+    get:
+      operationId: getMyOperatorProfile
+      tags: [operators]
+      summary: Get the authenticated operator's own profile
+      responses:
+        "200":
+          description: Operator profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+        "404":
+          description: No operator profile linked to this account
+    post:
+      operationId: createMyOperatorProfile
+      tags: [operators]
+      summary: Create an operator profile for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMyOperatorProfileInput"
+      responses:
+        "201":
+          description: Created operator profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+        "400":
+          description: Validation error
+        "409":
+          description: Operator profile already exists for this account
+    put:
+      operationId: updateMyOperatorProfile
+      tags: [operators]
+      summary: Update the authenticated operator's own profile (non-admin fields only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OperatorProfileUpdate"
+      responses:
+        "200":
+          description: Updated operator profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+        "400":
+          description: Validation error
+        "404":
+          description: No operator profile linked to this account
+
+  /operators/{id}:
+    get:
+      operationId: getOperator
+      tags: [operators]
+      summary: Get an operator by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Operator found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+        "404":
+          description: Not found
+
+  /requests:
+    get:
+      operationId: listRequests
+      tags: [requests]
+      summary: List all freeze-dry requests
+      responses:
+        "200":
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FreezeDryRequest"
+    post:
+      operationId: createRequest
+      tags: [requests]
+      summary: Submit a new freeze-dry request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreezeDryRequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreezeDryRequest"
+
+  /requests/{id}:
+    get:
+      operationId: getRequest
+      tags: [requests]
+      summary: Get a request by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreezeDryRequest"
+        "404":
+          description: Not found
+
+  /requests/{id}/messages:
+    get:
+      operationId: listMessagesForRequest
+      tags: [requests]
+      summary: List messages for a request
+      description: Returns the message thread for a request. Only the buyer who owns the request, operators who have bid on it, and admins can access this endpoint.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RequestMessage"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    post:
+      operationId: postMessageForRequest
+      tags: [requests]
+      summary: Post a message on a request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestMessageInput"
+      responses:
+        "201":
+          description: Message posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestMessage"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+  /requests/{id}/bids:
+    get:
+      operationId: listBidsForRequest
+      tags: [bids]
+      summary: List bids for a request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of bids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bid"
+
+  /bids:
+    post:
+      operationId: createBid
+      tags: [bids]
+      summary: Submit a bid on a request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BidInput"
+      responses:
+        "201":
+          description: Bid submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bid"
+
+  /admin/operators/{id}/certifications:
+    patch:
+      operationId: patchOperatorCertification
+      tags: [operators]
+      summary: Toggle a single certification's verified status (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CertificationToggle"
+      responses:
+        "200":
+          description: Updated operator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operator"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+  /bids/{id}/accept:
+    patch:
+      operationId: acceptBid
+      tags: [bids]
+      summary: Accept a bid (buyer only)
+      description: Marks a bid as accepted, closes the request, and creates a Stripe fee checkout session.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Bid accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptBidResponse"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent platform activity
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      description: |
+        Returns a presigned GCS URL for direct upload. The client sends JSON
+        metadata here, then uploads the file directly to the returned URL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed with correct Content-Type.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed with correct Content-Type.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /admin/operators:
+    get:
+      operationId: adminListOperators
+      tags: [admin]
+      summary: List all operators (admin)
+      responses:
+        "200":
+          description: List of operators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminOperator"
+    post:
+      operationId: adminCreateOperator
+      tags: [admin]
+      summary: Create operator (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminOperatorInput"
+      responses:
+        "201":
+          description: Operator created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOperator"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /admin/operators/{id}:
+    put:
+      operationId: adminUpdateOperator
+      tags: [admin]
+      summary: Update operator (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminOperatorInput"
+      responses:
+        "200":
+          description: Updated operator
+        "404":
+          description: Not found
+    delete:
+      operationId: adminDeleteOperator
+      tags: [admin]
+      summary: Delete operator (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /admin/manufacturers:
+    get:
+      operationId: adminListManufacturers
+      tags: [admin]
+      summary: List manufacturers (admin)
+      responses:
+        "200":
+          description: List of manufacturers
+    post:
+      operationId: adminCreateManufacturer
+      tags: [admin]
+      summary: Create manufacturer (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminManufacturerInput"
+      responses:
+        "201":
+          description: Manufacturer created
+        "400":
+          description: Validation error
+
+  /admin/manufacturers/{id}:
+    put:
+      operationId: adminUpdateManufacturer
+      tags: [admin]
+      summary: Update manufacturer (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminManufacturerInput"
+      responses:
+        "200":
+          description: Updated
+    delete:
+      operationId: adminDeleteManufacturer
+      tags: [admin]
+      summary: Delete manufacturer (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /admin/map-entries:
+    get:
+      operationId: adminListMapEntries
+      tags: [admin]
+      summary: List map entries (admin)
+      responses:
+        "200":
+          description: List of map entries
+    post:
+      operationId: adminCreateMapEntry
+      tags: [admin]
+      summary: Create map entry (admin) — creates a new operator with GPS data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminMapEntryInput"
+      responses:
+        "201":
+          description: Map entry created
+        "400":
+          description: Validation error
+
+  /admin/machinery:
+    get:
+      operationId: adminListMachinery
+      tags: [admin]
+      summary: List machinery & parts listings (admin)
+      responses:
+        "200":
+          description: List of machinery listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MachineryListing"
+    post:
+      operationId: adminCreateMachinery
+      tags: [admin]
+      summary: Create machinery listing (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MachineryListingInput"
+      responses:
+        "201":
+          description: Machinery listing created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MachineryListing"
+        "400":
+          description: Validation error
+
+  /admin/listings:
+    get:
+      operationId: adminListListings
+      tags: [admin]
+      summary: List all capacity and product listings (admin)
+      responses:
+        "200":
+          description: Combined listings response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminListingsResponse"
+    post:
+      operationId: adminCreateListing
+      tags: [admin]
+      summary: Create capacity or product listing (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminListingInput"
+      responses:
+        "201":
+          description: Listing created
+        "400":
+          description: Validation error
+
+  /admin/listings/{id}:
+    put:
+      operationId: adminUpdateListing
+      tags: [admin]
+      summary: Update listing (admin) — send listing_type in body to select table
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminListingInput"
+      responses:
+        "200":
+          description: Updated
+        "404":
+          description: Not found
+    delete:
+      operationId: adminDeleteListing
+      tags: [admin]
+      summary: Delete listing (admin) — send listing_type=capacity|product as query param
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: listing_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [capacity, product]
+      responses:
+        "200":
+          description: Deleted
+
+  /admin/market-intelligence:
+    get:
+      operationId: adminGetMarketIntelligence
+      tags: [admin]
+      summary: Get live market intelligence metrics (admin)
+      parameters:
+        - name: date_from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: date_to
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: region
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Market intelligence data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketIntelligenceData"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+
+  /admin/market-intelligence/override:
+    patch:
+      operationId: adminPatchMarketIntelligenceOverride
+      tags: [admin]
+      summary: Override a market intelligence data point (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketIntelligenceOverrideInput"
+      responses:
+        "200":
+          description: Override saved
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+
+  /admin/reports:
+    get:
+      operationId: adminListReports
+      tags: [admin]
+      summary: List stored report snapshots (admin)
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSnapshot"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+
+  /admin/reports/generate:
+    post:
+      operationId: adminGenerateReport
+      tags: [admin]
+      summary: Generate and store a report snapshot (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateReportInput"
+      responses:
+        "201":
+          description: Report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSnapshot"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+
+  /admin/reports/{id}:
+    get:
+      operationId: adminGetReport
+      tags: [admin]
+      summary: Get a single report snapshot by ID (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Report snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSnapshot"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    delete:
+      operationId: adminDeleteReport
+      tags: [admin]
+      summary: Delete a report snapshot (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+  /admin/blog:
+    get:
+      operationId: adminListBlogPosts
+      tags: [admin]
+      summary: List all blog posts (admin — drafts + published + archived)
+      responses:
+        "200":
+          description: List of blog posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminBlogPost"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+    post:
+      operationId: adminCreateBlogPost
+      tags: [admin]
+      summary: Create a blog post (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminBlogPostInput"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBlogPost"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "409":
+          description: Slug already exists
+
+  /admin/blog/{id}:
+    get:
+      operationId: adminGetBlogPost
+      tags: [admin]
+      summary: Get a single blog post by ID (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Blog post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBlogPost"
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    put:
+      operationId: adminUpdateBlogPost
+      tags: [admin]
+      summary: Update a blog post (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminBlogPostInput"
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBlogPost"
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "409":
+          description: Slug conflict
+    delete:
+      operationId: adminDeleteBlogPost
+      tags: [admin]
+      summary: Delete a blog post (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+  /admin/blog/upload-image:
+    post:
+      operationId: adminUploadBlogImage
+      tags: [admin]
+      summary: Upload a blog post cover image (admin only). Send raw image bytes with correct Content-Type header.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/webp:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Uploaded image URL
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url:
+                    type: string
+        "400":
+          description: Invalid file
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "413":
+          description: File too large
+
+  /storage/blog-cover-upload:
+    post:
+      operationId: uploadBlogCoverImage
+      tags: [Storage]
+      summary: Upload a blog cover image (admin only). Send raw image bytes with correct Content-Type header.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/webp:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Upload succeeded — returns public URL path
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url:
+                    type: string
+        "400":
+          description: Missing file or unsupported type
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Forbidden
+        "413":
+          description: File too large (max 10 MB)
+        "500":
+          description: Upload failed
+
+  /admin/machinery/{id}:
+    put:
+      operationId: adminUpdateMachinery
+      tags: [admin]
+      summary: Update machinery listing (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MachineryListingInput"
+      responses:
+        "200":
+          description: Updated
+    delete:
+      operationId: adminDeleteMachinery
+      tags: [admin]
+      summary: Delete machinery listing (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Operator:
+      type: object
+      required: [id, name, location, capacity_kg, price_per_kg, certifications, verified_certifications, turnaround_days, rating, review_count, available, created_at]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: ["string", "null"]
+        capacity_kg:
+          type: integer
+        price_per_kg:
+          type: number
+        certifications:
+          type: array
+          items:
+            type: string
+        verified_certifications:
+          type: array
+          items:
+            type: string
+        cert_verified_at:
+          type: object
+          additionalProperties:
+            type: string
+        turnaround_days:
+          type: integer
+        rating:
+          type: number
+        review_count:
+          type: integer
+        available:
+          type: boolean
+        created_at:
+          type: string
+        verification_status:
+          type: ["string", "null"]
+          description: "'verified' | 'partially_verified' | 'not_verified'"
+        source_urls:
+          type: array
+          items:
+            type: string
+        website_url:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        role:
+          type: ["string", "null"]
+          description: "'operator' | 'ingredient_seller' | 'machinery_supplier' | 'service_provider'"
+        provider_types:
+          type: array
+          items:
+            type: string
+          description: "Multi-select service types: 'operator' | 'ingredient_seller' | 'service_provider'"
+        last_verified_date:
+          type: ["string", "null"]
+        food_market_focus:
+          type: ["boolean", "null"]
+        pharmaceutical_focus:
+          type: ["boolean", "null"]
+        contact_page_url:
+          type: ["string", "null"]
+
+    OperatorInput:
+      type: object
+      required: [name, location, capacity_kg, price_per_kg, turnaround_days]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        capacity_kg:
+          type: integer
+        price_per_kg:
+          type: number
+        certifications:
+          type: array
+          items:
+            type: string
+        turnaround_days:
+          type: integer
+
+    CreateMyOperatorProfileInput:
+      type: object
+      description: Fields for creating a new operator profile. Name is required; numeric capacity/pricing fields default to 0/14 if omitted.
+      required: [name]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: ["string", "null"]
+        capacity_kg:
+          type: integer
+        price_per_kg:
+          type: number
+        certifications:
+          type: array
+          items:
+            type: string
+        turnaround_days:
+          type: integer
+        available:
+          type: boolean
+        website_url:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        food_market_focus:
+          type: ["boolean", "null"]
+        pharmaceutical_focus:
+          type: ["boolean", "null"]
+        contact_page_url:
+          type: ["string", "null"]
+        gps_lat:
+          type: ["number", "null"]
+        gps_lng:
+          type: ["number", "null"]
+        service_radius_km:
+          type: ["integer", "null"]
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+
+    OperatorProfileUpdate:
+      type: object
+      description: Fields an operator can self-edit. Sensitive admin-only fields (platform_fee_override, audit_status, verification_status) are excluded.
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: ["string", "null"]
+        capacity_kg:
+          type: integer
+        price_per_kg:
+          type: number
+        certifications:
+          type: array
+          items:
+            type: string
+        turnaround_days:
+          type: integer
+        available:
+          type: boolean
+        website_url:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        food_market_focus:
+          type: ["boolean", "null"]
+        pharmaceutical_focus:
+          type: ["boolean", "null"]
+        contact_page_url:
+          type: ["string", "null"]
+        gps_lat:
+          type: ["number", "null"]
+        gps_lng:
+          type: ["number", "null"]
+        service_radius_km:
+          type: ["integer", "null"]
+        map_status:
+          type: ["string", "null"]
+          description: "'active' | 'inactive'"
+        provider_types:
+          type: array
+          items:
+            type: string
+          description: "Selectable service types: 'operator', 'ingredient_seller', 'service_provider'"
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+
+    FreezeDryRequest:
+      type: object
+      required: [id, material_type, quantity_kg, target_moisture, deadline, budget_per_kg, status, created_at]
+      properties:
+        id:
+          type: integer
+        material_type:
+          type: string
+        quantity_kg:
+          type: integer
+        target_moisture:
+          type: ["number", "null"]
+        deadline:
+          type: string
+        budget_per_kg:
+          type: ["number", "null"]
+        special_requirements:
+          type: ["string", "null"]
+        status:
+          type: string
+        buyer_email:
+          type: ["string", "null"]
+        bid_count:
+          type: integer
+        created_at:
+          type: string
+        moderation_note:
+          type: ["string", "null"]
+        moderated_by:
+          type: ["string", "null"]
+
+    FreezeDryRequestInput:
+      type: object
+      required: [material_type, quantity_kg, deadline]
+      properties:
+        material_type:
+          type: string
+        quantity_kg:
+          type: integer
+        target_moisture:
+          type: number
+        deadline:
+          type: string
+        budget_per_kg:
+          type: number
+        special_requirements:
+          type: string
+        buyer_email:
+          type: string
+
+    Bid:
+      type: object
+      required: [id, request_id, operator_id, operator_name, price_per_kg, turnaround_days, status, created_at]
+      properties:
+        id:
+          type: integer
+        request_id:
+          type: integer
+        operator_id:
+          type: integer
+        operator_name:
+          type: string
+        price_per_kg:
+          type: number
+        turnaround_days:
+          type: integer
+        notes:
+          type: ["string", "null"]
+        status:
+          type: string
+        operator_audit_status:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    BidInput:
+      type: object
+      required: [request_id, operator_id, price_per_kg, turnaround_days]
+      properties:
+        request_id:
+          type: integer
+        operator_id:
+          type: integer
+        price_per_kg:
+          type: number
+        turnaround_days:
+          type: integer
+        notes:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [total_operators, active_requests, completed_contracts, avg_price_per_kg, total_bids_this_week]
+      properties:
+        total_operators:
+          type: integer
+        active_requests:
+          type: integer
+        completed_contracts:
+          type: integer
+        avg_price_per_kg:
+          type: number
+        total_bids_this_week:
+          type: integer
+
+    RequestMessage:
+      type: object
+      required: [id, request_id, user_id, sender_name, sender_role, body, created_at]
+      properties:
+        id:
+          type: integer
+        request_id:
+          type: integer
+        user_id:
+          type: integer
+        sender_name:
+          type: string
+        sender_role:
+          type: string
+        body:
+          type: string
+        created_at:
+          type: string
+
+    RequestMessageInput:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+
+    AcceptBidResponse:
+      type: object
+      required: [bid, checkout_url]
+      properties:
+        bid:
+          $ref: "#/components/schemas/Bid"
+        checkout_url:
+          type: ["string", "null"]
+
+    CertificationToggle:
+      type: object
+      required: [cert, verified]
+      properties:
+        cert:
+          type: string
+        verified:
+          type: boolean
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Original file name.
+        size:
+          type: integer
+          minimum: 1
+          description: File size in bytes.
+        contentType:
+          type: string
+          minLength: 1
+          description: MIME type of the file (e.g. `image/jpeg`).
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+          description: Presigned GCS URL for PUT upload.
+        objectPath:
+          type: string
+          description: Normalized object path (e.g. `/objects/uploads/uuid`). Store this in your database.
+        metadata:
+          $ref: '#/components/schemas/UploadUrlRequest'
+    AdminBlogPost:
+      type: object
+      required: [id, slug, title, body, status, created_by, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        seo_description:
+          type: ["string", "null"]
+        cover_image_url:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        author:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          description: "'draft' | 'published' | 'archived'"
+        published_at:
+          type: ["string", "null"]
+          description: ISO 8601 timestamp; null = not yet published
+        created_by:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    AdminBlogPostInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          description: Auto-generated from title if omitted
+        body:
+          type: string
+        seo_description:
+          type: ["string", "null"]
+        cover_image_url:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        author:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          description: "'draft' | 'published' | 'archived'"
+        published_at:
+          type: ["string", "null"]
+          description: ISO 8601 datetime; omit to auto-set to now when publishing
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    ActivityItem:
+      type: object
+      required: [id, type, message, timestamp]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+
+    AdminOperator:
+      type: object
+      required: [id, name, location]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: ["string", "null"]
+        capacity_kg:
+          type: integer
+        price_per_kg:
+          type: number
+        turnaround_days:
+          type: integer
+        certifications:
+          type: array
+          items:
+            type: string
+        available:
+          type: boolean
+        country:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        gps_lat:
+          type: ["number", "null"]
+        gps_lng:
+          type: ["number", "null"]
+        service_radius_km:
+          type: ["integer", "null"]
+        map_status:
+          type: string
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        created_at:
+          type: string
+
+    AdminOperatorInput:
+      type: object
+      required: [name, location]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: ["string", "null"]
+        capacity_kg:
+          type: number
+        price_per_kg:
+          type: number
+        turnaround_days:
+          type: integer
+        certifications:
+          type: array
+          items:
+            type: string
+        available:
+          type: boolean
+        country:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        website_url:
+          type: ["string", "null"]
+        role:
+          type: string
+        food_market_focus:
+          type: boolean
+        pharmaceutical_focus:
+          type: boolean
+        gps_lat:
+          type: ["number", "null"]
+        gps_lng:
+          type: ["number", "null"]
+        service_radius_km:
+          type: ["integer", "null"]
+        map_status:
+          type: string
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+
+    AdminManufacturerInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        tagline:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        website_url:
+          type: ["string", "null"]
+        logo_url:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        founded_year:
+          type: ["integer", "null"]
+        specialties:
+          type: array
+          items:
+            type: string
+        market_focus:
+          type: array
+          items:
+            type: string
+        certifications:
+          type: array
+          items:
+            type: string
+        production_capabilities:
+          type: ["string", "null"]
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        active:
+          type: boolean
+        featured:
+          type: boolean
+
+    AdminMapEntryInput:
+      type: object
+      required: [name, location]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        city:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        gps_lat:
+          type: ["number", "null"]
+        gps_lng:
+          type: ["number", "null"]
+        service_radius_km:
+          type: ["integer", "null"]
+        map_status:
+          type: string
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+
+    MachineryListingInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+          enum: [dryer, chamber, shelf, condenser, pump, part, other]
+        listing_status:
+          type: string
+          enum: [active, pending, sold, inactive]
+        condition:
+          type: string
+          enum: [new, refurbished, used]
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        currency:
+          type: string
+        manufacturer_name:
+          type: ["string", "null"]
+        model_number:
+          type: ["string", "null"]
+        year_manufactured:
+          type: ["integer", "null"]
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        operator_id:
+          type: ["integer", "null"]
+
+    AdminListingsResponse:
+      type: object
+      required: [capacity, products]
+      properties:
+        capacity:
+          type: array
+          items:
+            type: object
+        products:
+          type: array
+          items:
+            type: object
+
+    AdminListingInput:
+      type: object
+      required: [listing_type]
+      properties:
+        listing_type:
+          type: string
+          enum: [capacity, product]
+        user_id:
+          type: integer
+          description: Required for capacity listings
+        operator_id:
+          type: ["integer", "null"]
+        equipment_type:
+          type: string
+          description: Required for capacity listings
+        capacity_kg:
+          type: number
+        certifications:
+          type: array
+          items:
+            type: string
+        price_per_kg_min:
+          type: number
+        price_per_kg_max:
+          type: number
+        turnaround_days:
+          type: integer
+        available:
+          type: boolean
+        notes:
+          type: ["string", "null"]
+        approval_status:
+          type: string
+        name:
+          type: string
+          description: Required for product listings
+        operator_name:
+          type: string
+        material_type:
+          type: string
+        weight_kg:
+          type: number
+        moisture_pct:
+          type: ["number", "null"]
+        price_per_unit:
+          type: number
+        moq:
+          type: integer
+        description:
+          type: ["string", "null"]
+        contact_email:
+          type: string
+
+    MarketIntelligenceData:
+      type: object
+      properties:
+        avg_price_by_category:
+          type: array
+          items:
+            type: object
+            properties:
+              category: { type: string }
+              avg_price: { type: number }
+              count: { type: integer }
+        top_materials:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              value: { type: integer }
+        requests_by_region:
+          type: array
+          items:
+            type: object
+            properties:
+              region: { type: string }
+              count: { type: integer }
+        operator_win_rates:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              win_rate: { type: number }
+              total_bids: { type: integer }
+              won_bids: { type: integer }
+        bids_by_month:
+          type: array
+          items:
+            type: object
+            properties:
+              month: { type: string }
+              value: { type: integer }
+        requests_by_month:
+          type: array
+          items:
+            type: object
+            properties:
+              month: { type: string }
+              value: { type: integer }
+        revenue_by_month:
+          type: array
+          items:
+            type: object
+            properties:
+              month: { type: string }
+              value: { type: number }
+        listing_performance:
+          type: object
+          properties:
+            total_capacity_listings: { type: integer }
+            total_product_listings: { type: integer }
+            approved_capacity: { type: integer }
+            approved_products: { type: integer }
+        sales_volume:
+          type: object
+          properties:
+            total_contracts: { type: integer }
+            total_quantity_kg: { type: number }
+            total_contract_value: { type: number }
+            platform_fees: { type: number }
+        demand_by_region:
+          type: array
+          items:
+            type: object
+            properties:
+              region: { type: string }
+              count: { type: integer }
+        manufacturer_activity:
+          type: object
+          properties:
+            total_active: { type: integer }
+            top_manufacturers:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  country: { type: string }
+                  avg_rating: { type: number }
+                  review_count: { type: integer }
+        machinery_demand:
+          type: array
+          items:
+            type: object
+            properties:
+              category: { type: string }
+              total_listings: { type: integer }
+              avg_price: { type: ["number", "null"] }
+              active_listings: { type: integer }
+              pending_listings: { type: integer }
+        overrides:
+          type: object
+          additionalProperties: { type: number }
+
+    MarketIntelligenceOverrideInput:
+      type: object
+      required: [key, value]
+      properties:
+        key:
+          type: string
+          description: "Dot-separated key path to override, e.g. 'avg_price_by_category.Pharmaceutical'"
+        value:
+          type: number
+        note:
+          type: string
+
+    ReportSnapshot:
+      type: object
+      required: [id, type, date_range_start, date_range_end, generated_at, generated_by, generated_by_email, title]
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        date_range_start: { type: string }
+        date_range_end: { type: string }
+        filters_json: { type: object }
+        generated_at: { type: string }
+        generated_by: { type: integer }
+        generated_by_email: { type: string }
+        title: { type: string }
+        data_json: { type: object }
+
+    GenerateReportInput:
+      type: object
+      required: [type, date_range_start, date_range_end]
+      properties:
+        type:
+          type: string
+          enum: [weekly, monthly, custom]
+        date_range_start:
+          type: string
+        date_range_end:
+          type: string
+        title:
+          type: string
+        filters:
+          type: object
+          properties:
+            category: { type: string }
+            operator: { type: string }
+            region: { type: string }
+            listing_type: { type: string }
+            manufacturer: { type: string }
+            product_type: { type: string }
+
+    MachineryListing:
+      type: object
+      required: [id, title, category, listing_status, condition, currency]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+        listing_status:
+          type: string
+        condition:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        currency:
+          type: string
+        manufacturer_name:
+          type: ["string", "null"]
+        model_number:
+          type: ["string", "null"]
+        year_manufactured:
+          type: ["integer", "null"]
+        contact_name:
+          type: ["string", "null"]
+        contact_email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        operator_id:
+          type: ["integer", "null"]
+        created_at:
+          type: string
+        updated_at:
+          type: string

@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "6by-h8XmfzNCwGdCzHJ-P"
+uri = "file://artifacts/lyodex-mobile/assets/images/icon.png"
+type = "image"
+title = "generated_image"

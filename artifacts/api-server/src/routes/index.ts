@@ -1,0 +1,46 @@
+import { Router, type IRouter } from "express";
+import healthRouter from "./health";
+import operatorsRouter from "./operators";
+import requestsRouter from "./requests";
+import bidsRouter from "./bids";
+import dashboardRouter from "./dashboard";
+import roleDashboardRouter from "./role-dashboard";
+import stripeRouter from "./stripe";
+import connectRouter from "./connect";
+import authRouter from "./auth";
+import adminRouter from "./admin";
+import errorsRouter from "./errors";
+import notificationsRouter from "./notifications";
+import disputesRouter from "./disputes";
+import analyticsRouter from "./analytics";
+import eventsRouter from "./events";
+import productMarketRouter from "./product-market";
+import storageRouter from "./storage";
+import manufacturersRouter from "./manufacturers";
+import siteSettingsRouter from "./site-settings";
+import blogRouter from "./blog";
+
+const router: IRouter = Router();
+
+router.use(authRouter);
+router.use(healthRouter);
+router.use(errorsRouter);
+router.use(operatorsRouter);
+router.use(requestsRouter);
+router.use(bidsRouter);
+router.use(dashboardRouter);
+router.use(roleDashboardRouter);
+router.use(stripeRouter);
+router.use(connectRouter);
+router.use(adminRouter);
+router.use(notificationsRouter);
+router.use(disputesRouter);
+router.use(analyticsRouter);
+router.use(eventsRouter);
+router.use(productMarketRouter);
+router.use(storageRouter);
+router.use(manufacturersRouter);
+router.use(siteSettingsRouter);
+router.use(blogRouter);
+
+export default router;
