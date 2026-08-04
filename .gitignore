@@ -32,3 +32,7 @@ Thumbs.db
 
 # Identifiants admin générés localement — ne jamais commiter
 .admin-credentials.txt
+
+# Notes de travail — prix concurrents, contacts, journal d appels.
+# Le depot est public : ne jamais commiter ceci.
+QUESTIONNAIRE.md
