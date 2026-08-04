@@ -278,6 +278,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   { label: t.footer.platform.forOperators, href: "/how-it-works#operators" },
                   { label: t.footer.platform.pricing, href: "/pricing" },
                   { label: t.footer.platform.marketIntelligence, href: "/market-intelligence" },
+                  { label: t.seasonality.title, href: "/seasonality" },
                   { label: t.footer.platform.machinery, href: "/machinery" },
                 ],
               },

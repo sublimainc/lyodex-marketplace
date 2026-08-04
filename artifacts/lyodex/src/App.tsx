@@ -25,6 +25,7 @@ import Machinery from "@/pages/machinery";
 import MachineryListingForm from "@/pages/machinery-listing-form";
 import OperatorMap from "@/pages/operator-map";
 import MarketIntelligence from "@/pages/market-intelligence";
+import Seasonality from "@/pages/seasonality";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
 import ProductMarket from "@/pages/product-market";
@@ -68,6 +69,7 @@ function Router() {
         <Route path="/machinery/list" component={MachineryListingForm} />
         <Route path="/operator-map" component={OperatorMap} />
         <Route path="/market-intelligence" component={MarketIntelligence} />
+        <Route path="/seasonality" component={Seasonality} />
         <Route path="/blog" component={Blog} />
         <Route path="/blog/:slug" component={BlogPost} />
         <Route path="/product-market/list" component={ProductMarketListForm} />
