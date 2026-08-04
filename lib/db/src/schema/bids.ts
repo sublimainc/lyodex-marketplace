@@ -24,6 +24,11 @@ export const bidsTable = pgTable("bids", {
   materials_received_at: timestamp("materials_received_at"),  // when operator logged materials received
   processing_start_date: text("processing_start_date"),       // YYYY-MM-DD, set when materials received
   job_status_updated_at: timestamp("job_status_updated_at"),  // last status change
+  // Platform fee rate in force when this contract was awarded (0.09 = 9%).
+  // Snapshotted so that changing PLATFORM_FEE_PERCENT later cannot retroactively
+  // alter what past contracts were charged. Null on bids awarded before this
+  // column existed — treat those as the legacy 9% rate.
+  platform_fee_rate: real("platform_fee_rate"),
 }, (table) => [
   // One live bid per operator per request, enforced by the database.
   // The application also checks this before inserting, but that check is a

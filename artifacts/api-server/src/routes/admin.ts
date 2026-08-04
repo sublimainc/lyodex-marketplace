@@ -5,6 +5,7 @@ import { eq, desc, count, sql, gte, lte, and, isNull, ilike, or, inArray, type S
 import { sendDisputeResolvedEmail, sendListingApprovedEmail, sendListingRejectedEmail } from "../lib/email";
 import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
+import { historicalFeeRate } from "../lib/fees";
 import { z } from "zod/v4";
 
 const router: IRouter = Router();
@@ -260,13 +261,13 @@ router.get("/admin/overview", ...adminOnly, async (_req, res) => {
     .where(eq(bidsTable.status, "accepted"));
 
   const revenueRows = await db
-    .select({ price_per_kg: bidsTable.price_per_kg, quantity_kg: requestsTable.quantity_kg })
+    .select({ price_per_kg: bidsTable.price_per_kg, quantity_kg: requestsTable.quantity_kg, platform_fee_rate: bidsTable.platform_fee_rate })
     .from(bidsTable)
     .leftJoin(requestsTable, eq(bidsTable.request_id, requestsTable.id))
     .where(eq(bidsTable.status, "accepted"));
 
   const total_revenue = revenueRows.reduce(
-    (acc, r) => acc + (r.price_per_kg ?? 0) * (r.quantity_kg ?? 0) * 0.09,
+    (acc, r) => acc + (r.price_per_kg ?? 0) * (r.quantity_kg ?? 0) * historicalFeeRate(r.platform_fee_rate),
     0
   );
 
@@ -930,6 +931,7 @@ router.get("/admin/transactions", ...adminFinance, async (_req, res) => {
       request_id: bidsTable.request_id,
       operator_name: bidsTable.operator_name,
       price_per_kg: bidsTable.price_per_kg,
+      platform_fee_rate: bidsTable.platform_fee_rate,
       turnaround_days: bidsTable.turnaround_days,
       status: bidsTable.status,
       fee_status: bidsTable.fee_status,
@@ -951,7 +953,7 @@ router.get("/admin/transactions", ...adminFinance, async (_req, res) => {
     return {
       ...r,
       contract_value,
-      fee_amount: +(contract_value * 0.09).toFixed(2),
+      fee_amount: +(contract_value * historicalFeeRate(r.platform_fee_rate)).toFixed(2),
     };
   });
 
@@ -988,6 +990,7 @@ router.get("/admin/insights", ...adminOnly, async (_req, res) => {
   const revenueRows = await db
     .select({
       price_per_kg: bidsTable.price_per_kg,
+      platform_fee_rate: bidsTable.platform_fee_rate,
       quantity_kg: requestsTable.quantity_kg,
       month: sql<string>`to_char(${bidsTable.created_at}, 'YYYY-MM')`,
     })
@@ -998,7 +1001,7 @@ router.get("/admin/insights", ...adminOnly, async (_req, res) => {
   const revenueByMonth: Record<string, number> = {};
   for (const r of revenueRows) {
     const key = r.month ?? "unknown";
-    const fee = (r.price_per_kg ?? 0) * (r.quantity_kg ?? 0) * 0.09;
+    const fee = (r.price_per_kg ?? 0) * (r.quantity_kg ?? 0) * historicalFeeRate(r.platform_fee_rate);
     revenueByMonth[key] = (revenueByMonth[key] ?? 0) + fee;
   }
   const totalRevenue = Object.values(revenueByMonth).reduce((a, b) => a + b, 0);
@@ -1616,6 +1619,7 @@ router.get("/admin/market-intelligence", ...adminOnly, async (req, res) => {
     db
       .select({
         price_per_kg: bidsTable.price_per_kg,
+        platform_fee_rate: bidsTable.platform_fee_rate,
         quantity_kg: requestsTable.quantity_kg,
         month: sql<string>`to_char(${bidsTable.created_at}, 'YYYY-MM')`,
       })
@@ -1706,7 +1710,7 @@ router.get("/admin/market-intelligence", ...adminOnly, async (req, res) => {
   for (const r of acceptedBidRows) {
     const key = r.month ?? "unknown";
     const val = (r.price_per_kg ?? 0) * (r.quantity_kg ?? 0);
-    const fee = val * 0.09;
+    const fee = val * historicalFeeRate(r.platform_fee_rate);
     revenueByMonth[key] = (revenueByMonth[key] ?? 0) + fee;
     totalContractValue += val;
     totalQuantityKg += r.quantity_kg ?? 0;
@@ -2007,6 +2011,7 @@ router.post("/admin/reports/generate", ...adminModerate, async (req, res) => {
     db
       .select({
         price_per_kg: bidsTable.price_per_kg,
+        platform_fee_rate: bidsTable.platform_fee_rate,
         quantity_kg: requestsTable.quantity_kg,
         month: sql<string>`to_char(${bidsTable.created_at}, 'YYYY-MM')`,
         operator_name: bidsTable.operator_name,
@@ -2038,7 +2043,7 @@ router.post("/admin/reports/generate", ...adminModerate, async (req, res) => {
   for (const r of acceptedBidRows) {
     const key = r.month ?? "unknown";
     const val = (r.price_per_kg ?? 0) * (r.quantity_kg ?? 0);
-    revenueByMonth[key] = (revenueByMonth[key] ?? 0) + val * 0.09;
+    revenueByMonth[key] = (revenueByMonth[key] ?? 0) + val * historicalFeeRate(r.platform_fee_rate);
     totalContractValue += val;
     totalQtyKg += r.quantity_kg ?? 0;
   }

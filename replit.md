@@ -72,6 +72,28 @@ decides what that admin may do. Capabilities are defined in
 A null sub-role keeps full access so pre-existing admin accounts are not locked
 out. An admin cannot change their own sub-role.
 
+## Platform commission
+
+The fee is configured, not hardcoded: `PLATFORM_FEE_PERCENT` (see `.env.example`).
+`0` is the launch setting — buyers and operators are connected for free while
+liquidity is built; `9` switches commission on without a code change.
+
+Resolution lives in `artifacts/api-server/src/lib/fees.ts`. Three rules matter:
+
+- **Default 0.** A missing or malformed value never starts charging people.
+  Under-charging is a business decision; over-charging is a chargeback.
+- **The rate is frozen onto the contract.** When escrow is funded, the rate in
+  force is written to `bids.platform_fee_rate`. Payouts and revenue reports read
+  that snapshot, never the current environment value — otherwise flipping 0% to
+  9% would restate every past contract and make the books disagree with what was
+  actually charged. Contracts predating the column fall back to the legacy 9%.
+- **The UI reads the real rate.** `GET /api/site-settings` publishes
+  `platform_fee_percent`, and `{fee}` placeholders in the translations are
+  substituted in `LanguageProvider`. Copy can never advertise a rate the server
+  does not charge.
+
+Per-operator exceptions use `operators.platform_fee_override` (a rate: 0.05 = 5%).
+
 ## Data honesty rules
 
 Public-facing numbers must be computed from real platform activity, or not

@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { siteSettingsTable, SITE_SETTING_KEYS, type SiteSettingKey } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
+import { PLATFORM_FEE_PERCENT } from "../lib/fees";
 
 const router: IRouter = Router();
 // Blog and site settings are content surfaces: gated on the "content"
@@ -28,11 +29,15 @@ async function getSettings(): Promise<Record<SiteSettingKey, boolean>> {
   return result;
 }
 
-// ─── GET /api/site-settings — public, returns lock flags ─────────────────────
+// ─── GET /api/site-settings — public, returns lock flags + pricing ───────────
+// The fee percentage is published here so the marketing copy always states the
+// rate actually configured on the server. Hardcoding "9%" in the UI while the
+// server charges something else would be the same class of bug as the
+// fabricated market figures.
 router.get("/site-settings", async (_req, res) => {
   const settings = await getSettings();
   res.set("Cache-Control", "public, max-age=30");
-  return res.json(settings);
+  return res.json({ ...settings, platform_fee_percent: PLATFORM_FEE_PERCENT });
 });
 
 // ─── GET /api/admin/site-settings — admin only ───────────────────────────────

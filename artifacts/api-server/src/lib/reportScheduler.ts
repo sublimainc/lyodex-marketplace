@@ -12,6 +12,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, desc, count, sql, gte, lte, and } from "drizzle-orm";
 import { logger } from "./logger";
+import { historicalFeeRate } from "./fees";
 import { sendScheduledReportEmail } from "./email";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -84,6 +85,7 @@ async function generateReportSnapshot(
     db
       .select({
         price_per_kg: bidsTable.price_per_kg,
+        platform_fee_rate: bidsTable.platform_fee_rate,
         quantity_kg: requestsTable.quantity_kg,
         month: sql<string>`to_char(${bidsTable.created_at}, 'YYYY-MM')`,
         operator_name: bidsTable.operator_name,
@@ -121,7 +123,7 @@ async function generateReportSnapshot(
   for (const r of acceptedBidRows) {
     const key = r.month ?? "unknown";
     const val = (r.price_per_kg ?? 0) * (r.quantity_kg ?? 0);
-    revenueByMonth[key] = (revenueByMonth[key] ?? 0) + val * 0.09;
+    revenueByMonth[key] = (revenueByMonth[key] ?? 0) + val * historicalFeeRate(r.platform_fee_rate);
     totalContractValue += val;
     totalQtyKg += r.quantity_kg ?? 0;
   }

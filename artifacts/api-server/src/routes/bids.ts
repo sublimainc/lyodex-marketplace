@@ -12,6 +12,7 @@ import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
 import { sendNewBidEmail, sendOnboardingIncompleteEmail } from "../lib/email";
 import { getPublicBaseUrl } from "../lib/publicUrl";
+import { resolveFeeRate, calculateFees } from "../lib/fees";
 
 const router: IRouter = Router();
 
@@ -309,7 +310,17 @@ router.patch("/bids/:id/accept", requireAuth, requireRole("buyer", "admin"), asy
 
   const contractValue = bid.price_per_kg * (request.quantity_kg ?? 0);
   const escrowAmountCents = Math.round(contractValue * 100);
-  const operatorPayout = +(contractValue * 0.91).toFixed(2);
+  // Indicative only — the authoritative rate is resolved and snapshotted when
+  // escrow is funded in the Stripe webhook.
+  const [feeOperatorRow] = await db
+    .select({ platform_fee_override: operatorsTable.platform_fee_override })
+    .from(operatorsTable)
+    .where(eq(operatorsTable.id, bid.operator_id))
+    .limit(1);
+  const operatorPayout = calculateFees(
+    escrowAmountCents,
+    resolveFeeRate(feeOperatorRow?.platform_fee_override),
+  ).operatorPayout;
 
   // ── Guard: contract value must be large enough to fund via Stripe escrow ────
   // Stripe requires a minimum charge of 50 cents. Any lower amount means we
@@ -598,6 +609,7 @@ router.post("/bids/:id/complete", requireAuth, requireRole("buyer", "admin"), as
   const [operatorRecord] = await db
     .select({
       stripe_account_id: operatorsTable.stripe_account_id,
+      platform_fee_override: operatorsTable.platform_fee_override,
       stripe_onboarded: operatorsTable.stripe_onboarded,
       operator_name: operatorsTable.name,
       user_id: operatorsTable.user_id,
@@ -651,7 +663,10 @@ router.post("/bids/:id/complete", requireAuth, requireRole("buyer", "admin"), as
     if (!operatorReady) {
       // Notify the operator so they know they need to act
       const contractValue = (bid.escrow_amount_cents ?? 0) / 100;
-      const operatorPayout = +(contractValue * 0.91).toFixed(2);
+      const operatorPayout = calculateFees(
+        bid.escrow_amount_cents ?? 0,
+        bid.platform_fee_rate ?? resolveFeeRate(operatorRecord?.platform_fee_override),
+      ).operatorPayout;
 
       logger.warn({ bidId, operatorId: bid.operator_id, hasAccount: !!operatorRecord?.stripe_account_id, onboarded: operatorRecord?.stripe_onboarded }, "Contract completion blocked — operator Stripe onboarding incomplete");
 
@@ -688,9 +703,13 @@ router.post("/bids/:id/complete", requireAuth, requireRole("buyer", "admin"), as
     await stripe.paymentIntents.capture(bid.escrow_payment_intent_id);
 
     const contractValue = (bid.escrow_amount_cents ?? 0) / 100;
-    const platformFee = +(contractValue * 0.09).toFixed(2);
-    const operatorPayout = +(contractValue * 0.91).toFixed(2);
-    const operatorPayoutCents = Math.round(contractValue * 0.91 * 100);
+    // Use the rate frozen onto the contract when it was awarded, so a later
+    // change to PLATFORM_FEE_PERCENT cannot alter an operator's agreed payout.
+    // Contracts awarded before that column existed fall back to the legacy 9%.
+    const settlement = calculateFees(bid.escrow_amount_cents ?? 0, bid.platform_fee_rate ?? 0.09);
+    const platformFee = settlement.fee;
+    const operatorPayout = settlement.operatorPayout;
+    const operatorPayoutCents = settlement.operatorPayoutCents;
 
     // ── Stripe Connect transfer ───────────────────────────────────────────────
     // Operator is confirmed ready (checked above). Send their 91% share to

@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { getUncachableStripeClient, getStripePublishableKey } from "../stripeClient";
 import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
+import { resolveFeeRate, calculateFees, isFeeWaived } from "../lib/fees";
 import { db } from "@workspace/db";
-import { bidsTable, requestsTable } from "@workspace/db/schema";
+import { bidsTable, requestsTable, operatorsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { checkWebhookHealth } from "../lib/webhookHealthMonitor";
 import { getPublicBaseUrl } from "../lib/publicUrl";
@@ -112,7 +113,23 @@ router.post(
     if (!request) return res.status(404).json({ error: "Request not found" });
 
     const contract_value = bid.price_per_kg * (request.quantity_kg ?? 0);
-    const fee_amount_cents = Math.round(contract_value * 0.09 * 100);
+    const [feeOperator] = await db
+      .select({ platform_fee_override: operatorsTable.platform_fee_override })
+      .from(operatorsTable)
+      .where(eq(operatorsTable.id, bid.operator_id))
+      .limit(1);
+    const feeRate = resolveFeeRate(feeOperator?.platform_fee_override);
+    const fee_amount_cents = calculateFees(Math.round(contract_value * 100), feeRate).feeCents;
+
+    // Fee waived (launch pricing, or a per-operator override of 0). There is
+    // nothing to charge, so report success rather than failing the flow.
+    if (isFeeWaived(feeRate)) {
+      return res.json({
+        fee_waived: true,
+        fee_amount_cents: 0,
+        message: "No platform fee is due on this contract.",
+      });
+    }
 
     if (fee_amount_cents < 50) {
       return res.status(400).json({ error: "Fee amount too small to process via Stripe (minimum $0.50)" });
