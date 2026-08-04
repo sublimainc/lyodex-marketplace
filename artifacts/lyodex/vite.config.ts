@@ -19,7 +19,26 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH ?? "/";
+// Git Bash (MSYS) rewrites a lone "/" in an environment variable into the Git
+// installation path when it spawns a native Windows process — BASE_PATH=/ then
+// arrives here as "C:/Program Files/Git/". Every asset URL in the built
+// index.html would point somewhere that does not exist, and the app would load
+// as a blank page with no console error to explain it.
+//
+// A legitimate base path is either "/" or a site-relative sub-path, so anything
+// carrying a drive letter or a backslash is a mangled value and is discarded.
+const rawBasePath = process.env.BASE_PATH;
+const basePathIsMangled =
+  !!rawBasePath && (/^[A-Za-z]:/.test(rawBasePath) || rawBasePath.includes("\\"));
+
+if (basePathIsMangled) {
+  console.warn(
+    `[vite] Ignoring BASE_PATH="${rawBasePath}" — it looks like a shell-mangled ` +
+      `absolute path rather than a URL base. Falling back to "/".`,
+  );
+}
+
+const basePath = basePathIsMangled ? "/" : (rawBasePath ?? "/");
 
 // Replit-only developer tooling. Loaded dynamically and tolerated when absent,
 // so the @replit/* packages can be uninstalled entirely when hosting elsewhere
