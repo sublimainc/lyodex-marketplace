@@ -29,3 +29,6 @@ Thumbs.db
 # ── Replit workspace state (not source) ──────────────────────────────────────
 .config/
 .local/
+
+# Identifiants admin générés localement — ne jamais commiter
+.admin-credentials.txt

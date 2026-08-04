@@ -21,10 +21,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    # Not published to the host by default — the app reaches it over the
-    # compose network. Uncomment only if you need a local SQL client.
-    # ports:
-    #   - "5432:5432"
+    ports:
+      # Bound to the loopback interface only. This lets you run the API from
+      # the host (pnpm dev) and connect with a SQL client, without exposing the
+      # database to your local network — "5432:5432" alone would listen on
+      # 0.0.0.0 and make it reachable by anyone on the same Wi-Fi.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
 
   app:
     build:

@@ -18,10 +18,5 @@
   "dependencies": {
     "stripe": "20.0.0",
     "stripe-replit-sync": "1.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "uuid": ">=11.1.1"
-    }
   }
 }
