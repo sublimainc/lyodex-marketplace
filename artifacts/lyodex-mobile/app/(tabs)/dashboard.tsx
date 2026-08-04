@@ -1,6 +1,6 @@
-import { useGetDashboardSummary, useGetRecentActivity } from "@workspace/api-client-react";
+import { getBaseUrl, useGetDashboardSummary, useGetRecentActivity } from "@workspace/api-client-react";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  Pressable,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,52 +16,73 @@ import Svg, { Polyline, Circle, Line } from "react-native-svg";
 
 import { useColors } from "@/hooks/useColors";
 
-// ─── Static market data (mirrors web market-intelligence page) ───────────────
+// ─── Live market data ─────────────────────────────────────────────────────────
+// Everything below is computed server-side from real platform activity by
+// GET /api/market/analytics (MarketDataAggregationService). Nulls mean the
+// figure is withheld because fewer than `min_cohort` observations exist —
+// they must render as "—", never as zero or an invented placeholder.
 
-const MONTHS = ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr"];
-const FOOD_PRICES = [7.8, 8.1, 8.4, 8.9, 9.2, 8.9];
-const VOLUME_DATA = [3800, 4100, 4500, 4800, 5100, 4900];
-const RFQ_DATA = [18, 22, 28, 31, 35, 30];
+interface CategoryStat {
+  category: string;
+  avg_quoted_price: number | null;
+  min_price: number | null;
+  max_price: number | null;
+  quote_count: number;
+  accepted_count: number;
+}
 
-const CATEGORY_DATA = [
-  { name: "Fruits & Berries",      strictMin: 6.20, avg: 8.90,  max: 13.50 },
-  { name: "Vegetables",            strictMin: 4.10, avg: 6.20,  max: 9.80  },
-  { name: "Nutraceuticals",        strictMin: 24.0, avg: 32.50, max: 48.00 },
-  { name: "Pet Food",              strictMin: 16.0, avg: 22.00, max: 31.00 },
-  { name: "Pharmaceutical",        strictMin: 62.0, avg: 87.50, max: 125.00 },
-  { name: "Probiotics",            strictMin: 36.0, avg: 48.00, max: 68.00 },
-];
+interface RegionStat {
+  country: string;
+  operator_count: number;
+  available_count: number;
+  avg_price_per_kg: number | null;
+  avg_turnaround_days: number | null;
+}
 
-const AREA_DATA = [
-  { area: "Ontario",     country: "CA", operators: 12, floor: 6.80, avg: 9.20,  demand: 0.82 },
-  { area: "Quebec",      country: "CA", operators: 8,  floor: 7.10, avg: 9.80,  demand: 0.74 },
-  { area: "BC",          country: "CA", operators: 6,  floor: 7.40, avg: 10.10, demand: 0.68 },
-  { area: "Alberta",     country: "CA", operators: 4,  floor: 7.00, avg: 9.40,  demand: 0.61 },
-  { area: "California",  country: "US", operators: 18, floor: 7.20, avg: 9.60,  demand: 0.91 },
-  { area: "Colorado",    country: "US", operators: 9,  floor: 6.90, avg: 9.10,  demand: 0.78 },
-  { area: "Wisconsin",   country: "US", operators: 7,  floor: 6.50, avg: 8.70,  demand: 0.65 },
-  { area: "Texas",       country: "US", operators: 5,  floor: 6.60, avg: 8.80,  demand: 0.59 },
-  { area: "Netherlands", country: "EU", operators: 22, floor: 8.40, avg: 11.20, demand: 0.88 },
-  { area: "Germany",     country: "EU", operators: 15, floor: 8.10, avg: 10.80, demand: 0.80 },
-];
+interface CertStat {
+  certification: string;
+  operator_count: number;
+  pct_of_operators: number;
+  verified_count: number;
+}
 
-const CERT_DATA = [
-  { cert: "HACCP",     pct: 68 },
-  { cert: "GMP",       pct: 34 },
-  { cert: "Organic",   pct: 28 },
-  { cert: "FDA Reg.",  pct: 22 },
-  { cert: "ISO 22000", pct: 15 },
-  { cert: "Kosher",    pct: 8  },
-  { cert: "Halal",     pct: 6  },
-];
+interface TrendPoint {
+  month: string;
+  rfq_count: number;
+  bid_count: number;
+  avg_bid_price: number | null;
+}
 
-const CERT_COLORS: Record<string, string> = {
-  HACCP: "#2563EB", GMP: "#0F6E56", Organic: "#059669",
-  "FDA Reg.": "#7C3AED", "ISO 22000": "#D97706", Kosher: "#0891B2", Halal: "#9333EA",
-};
+interface MarketSnapshot {
+  category_stats: CategoryStat[];
+  regions: RegionStat[];
+  certifications: CertStat[];
+  monthly_trends: TrendPoint[];
+  platform: {
+    total_requests: number;
+    total_quotes: number;
+    total_operators: number;
+    available_operators: number;
+    avg_quoted_price: number | null;
+    avg_turnaround_days: number | null;
+  };
+  min_cohort: number;
+  generated_at: string;
+}
 
-const COUNTRY_FLAGS: Record<string, string> = { CA: "CA", US: "US", EU: "EU" };
-const COUNTRY_COLORS: Record<string, string> = { CA: "#DC2626", US: "#1D4ED8", EU: "#7C3AED" };
+const CERT_PALETTE = ["#2563EB", "#0F6E56", "#059669", "#7C3AED", "#D97706", "#0891B2", "#9333EA"];
+
+function certColor(name: string, idx: number): string {
+  return CERT_PALETTE[idx % CERT_PALETTE.length] ?? "#0F6E56";
+}
+
+function monthLabel(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  if (!y || !m) return ym;
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-CA", { month: "short", timeZone: "UTC" });
+}
+
+const money = (v: number | null) => (v === null ? "—" : `$${v.toFixed(2)}`);
 
 const ACTIVITY_ICONS: Record<string, React.ComponentProps<typeof Feather>["name"]> = {
   bid: "tag", request: "file-text", operator: "users", contract: "check-circle",
@@ -158,23 +178,45 @@ function MetricCard({
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
-type RegionTab = "CA" | "US" | "EU";
-
 export default function DashboardScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
-  const [regionTab, setRegionTab] = useState<RegionTab>("CA");
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useGetDashboardSummary();
   const { data: activity, isLoading: loadingActivity, refetch: refetchActivity } = useGetRecentActivity();
 
+  // No generated hook exists for /market/analytics (it is not in the OpenAPI
+  // spec), so this is a hand-rolled fetch against the same base URL.
+  const [market, setMarket] = useState<MarketSnapshot | null>(null);
+  const [loadingMarket, setLoadingMarket] = useState(true);
+
+  const fetchMarket = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/market/analytics`);
+      if (!res.ok) throw new Error(String(res.status));
+      setMarket((await res.json()) as MarketSnapshot);
+    } catch {
+      setMarket(null);
+    } finally {
+      setLoadingMarket(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchMarket();
+  }, [fetchMarket]);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchSummary(), refetchActivity()]);
+    await Promise.all([refetchSummary(), refetchActivity(), fetchMarket()]);
     setRefreshing(false);
   };
+
+  const trends = market?.monthly_trends ?? [];
+  const monthLabels = trends.map((p) => monthLabel(p.month));
+  const priceSeries = trends.map((p) => p.avg_bid_price).filter((v): v is number => v !== null);
 
   const topPad = isWeb ? 67 : insets.top;
 
@@ -185,7 +227,11 @@ export default function DashboardScreen() {
     { label: "Bids This Week",    value: summary?.total_bids_this_week,  sub: "New submissions",      icon: "tag"           as const, accent: "#6366F1" },
   ];
 
-  const regionOperators = AREA_DATA.filter((a) => a.country === regionTab);
+  const EmptyMarket = ({ label }: { label: string }) => (
+    <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border, padding: 20 }]}>
+      <Text style={[styles.chartLabel, { color: colors.mutedForeground, textAlign: "center" }]}>{label}</Text>
+    </View>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -217,180 +263,192 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* ── Price trend & volume charts ──────────────────────────────── */}
+        {/* ── Price trend & RFQ charts ─────────────────────────────────── */}
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Price Trend — 6 Months</Text>
-          <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.chartRow}>
-              {/* Line sparkline */}
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-                  <Text style={[styles.chartLabel, { color: colors.mutedForeground }]}>Food avg $/kg</Text>
-                  <View style={[styles.trendPill, { backgroundColor: colors.successLight }]}>
-                    <Feather name="trending-up" size={11} color={colors.success} />
-                    <Text style={[styles.trendPillText, { color: colors.success }]}>+14%</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Quoted Price — 6 Months</Text>
+          {loadingMarket ? (
+            <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <ActivityIndicator color={colors.primary} style={{ padding: 20 }} />
+            </View>
+          ) : trends.length === 0 ? (
+            <EmptyMarket label="No platform activity yet" />
+          ) : (
+            <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.chartRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.chartLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>
+                    Avg bid $/kg
+                  </Text>
+                  {priceSeries.length >= 2 ? (
+                    <Sparkline data={priceSeries} width={160} height={56} color={colors.primary} />
+                  ) : (
+                    <Text style={[styles.axisLabel, { color: colors.mutedForeground, paddingVertical: 20 }]}>
+                      Not enough data yet
+                    </Text>
+                  )}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
+                    {monthLabels.map((m, i) => (
+                      <Text key={`${m}-${i}`} style={[styles.axisLabel, { color: colors.mutedForeground }]}>{m}</Text>
+                    ))}
                   </View>
                 </View>
-                <Sparkline data={FOOD_PRICES} width={160} height={56} color={colors.primary} />
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
-                  {MONTHS.map((m) => (
-                    <Text key={m} style={[styles.axisLabel, { color: colors.mutedForeground }]}>{m}</Text>
-                  ))}
+                <View style={{ width: 110 }}>
+                  <Text style={[styles.chartLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>RFQ volume</Text>
+                  <MiniBarChart
+                    data={trends.map((p) => p.rfq_count)}
+                    labels={monthLabels}
+                    color={colors.primary + "80"}
+                    height={50}
+                    colors={colors}
+                  />
                 </View>
               </View>
-              {/* RFQ mini bars */}
-              <View style={{ width: 110 }}>
-                <Text style={[styles.chartLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>RFQ volume</Text>
-                <MiniBarChart data={RFQ_DATA} labels={MONTHS} color={colors.primary + "80"} height={50} colors={colors} />
+            </View>
+          )}
+        </View>
+
+        {/* ── Bids received ────────────────────────────────────────────── */}
+        {!loadingMarket && trends.length > 0 && (
+          <View style={[styles.section, { paddingHorizontal: 16 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Bids Received per Month</Text>
+            <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <MiniBarChart
+                data={trends.map((p) => p.bid_count)}
+                labels={monthLabels}
+                color="#6366F1"
+                height={64}
+                colors={colors}
+              />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
+                <Text style={[styles.chartLabel, { color: colors.mutedForeground }]}>
+                  Peak: {Math.max(...trends.map((p) => p.bid_count), 0)}
+                </Text>
+                <Text style={[styles.chartLabel, { color: colors.mutedForeground }]}>
+                  Total: {trends.reduce((s, p) => s + p.bid_count, 0)}
+                </Text>
               </View>
             </View>
           </View>
-        </View>
-
-        {/* ── Volume chart ─────────────────────────────────────────────── */}
-        <View style={[styles.section, { paddingHorizontal: 16 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Monthly Volume (kg)</Text>
-          <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <MiniBarChart data={VOLUME_DATA} labels={MONTHS} color="#6366F1" height={64} colors={colors} />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-              <Text style={[styles.chartLabel, { color: colors.mutedForeground }]}>
-                Peak: {Math.max(...VOLUME_DATA).toLocaleString()} kg
-              </Text>
-              <Text style={[styles.chartLabel, { color: colors.mutedForeground }]}>
-                Avg: {Math.round(VOLUME_DATA.reduce((a, b) => a + b) / VOLUME_DATA.length).toLocaleString()} kg
-              </Text>
-            </View>
-          </View>
-        </View>
+        )}
 
         {/* ── Category pricing table ──────────────────────────────────── */}
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Pricing by Category</Text>
-          <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {/* Header */}
-            <View style={[styles.tableHeader, { borderBottomColor: colors.border, backgroundColor: colors.muted }]}>
-              <Text style={[styles.thCategory, { color: colors.mutedForeground }]}>Category</Text>
-              <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Floor</Text>
-              <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Avg</Text>
-              <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Max</Text>
-            </View>
-            {CATEGORY_DATA.map((row, idx) => (
-              <View
-                key={row.name}
-                style={[
-                  styles.tableRow,
-                  idx < CATEGORY_DATA.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-                ]}
-              >
-                <Text style={[styles.tdCategory, { color: colors.foreground }]} numberOfLines={2}>{row.name}</Text>
-                <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>${row.strictMin}</Text>
-                <Text style={[styles.tdCol, { color: colors.primary, fontFamily: "Inter_700Bold" }]}>${row.avg}</Text>
-                <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>${row.max}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Pricing by Material</Text>
+          {loadingMarket ? (
+            <EmptyMarket label="Loading…" />
+          ) : !market || market.category_stats.length === 0 ? (
+            <EmptyMarket label={`Benchmarks appear once ${market?.min_cohort ?? 3}+ bids exist per material`} />
+          ) : (
+            <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.tableHeader, { borderBottomColor: colors.border, backgroundColor: colors.muted }]}>
+                <Text style={[styles.thCategory, { color: colors.mutedForeground }]}>Material</Text>
+                <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Min</Text>
+                <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Avg</Text>
+                <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Max</Text>
               </View>
-            ))}
-          </View>
+              {market.category_stats.map((row, idx) => (
+                <View
+                  key={row.category}
+                  style={[
+                    styles.tableRow,
+                    idx < market.category_stats.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+                  ]}
+                >
+                  <Text style={[styles.tdCategory, { color: colors.foreground }]} numberOfLines={2}>{row.category}</Text>
+                  <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>{money(row.min_price)}</Text>
+                  <Text style={[styles.tdCol, { color: colors.primary, fontFamily: "Inter_700Bold" }]}>{money(row.avg_quoted_price)}</Text>
+                  <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>{money(row.max_price)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* ── Regional pricing ─────────────────────────────────────────── */}
+        {/* ── Operator supply by country ───────────────────────────────── */}
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Regional Pricing</Text>
-          {/* Region tabs */}
-          <View style={[styles.regionTabs, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-            {(["CA", "US", "EU"] as RegionTab[]).map((tab) => (
-              <Pressable
-                key={tab}
-                onPress={() => setRegionTab(tab)}
-                style={[
-                  styles.regionTab,
-                  regionTab === tab && { backgroundColor: colors.primary },
-                ]}
-              >
-                <Text style={[styles.regionTabText, { color: regionTab === tab ? "#fff" : colors.mutedForeground }]}>
-                  {tab === "CA" ? "Canada" : tab === "US" ? "USA" : "Europe"}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.tableHeader, { borderBottomColor: colors.border, backgroundColor: colors.muted }]}>
-              <Text style={[styles.thRegion, { color: colors.mutedForeground }]}>Region</Text>
-              <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Ops</Text>
-              <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Floor</Text>
-              <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Avg</Text>
-              <Text style={[styles.thDemand, { color: colors.mutedForeground }]}>Demand</Text>
-            </View>
-            {regionOperators.map((row, idx) => (
-              <View
-                key={row.area}
-                style={[
-                  styles.tableRow,
-                  idx < regionOperators.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-                ]}
-              >
-                <View style={styles.thRegionCell}>
-                  <Text style={[styles.tdRegion, { color: colors.foreground }]}>{row.area}</Text>
-                </View>
-                <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>{row.operators}</Text>
-                <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>${row.floor}</Text>
-                <Text style={[styles.tdCol, { color: colors.primary, fontFamily: "Inter_700Bold" }]}>${row.avg}</Text>
-                {/* Demand bar */}
-                <View style={styles.demandCell}>
-                  <View style={[styles.demandBar, { backgroundColor: colors.muted }]}>
-                    <View
-                      style={[
-                        styles.demandFill,
-                        {
-                          width: `${Math.round(row.demand * 100)}%` as any,
-                          backgroundColor: row.demand > 0.8 ? "#10B981" : row.demand > 0.6 ? "#F59E0B" : "#6B7280",
-                        },
-                      ]}
-                    />
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Operator Supply by Country</Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+            Operators listed on LyoDex and their published rates
+          </Text>
+          {loadingMarket ? (
+            <EmptyMarket label="Loading…" />
+          ) : !market || market.regions.length === 0 ? (
+            <EmptyMarket label="No operators listed yet" />
+          ) : (
+            <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.tableHeader, { borderBottomColor: colors.border, backgroundColor: colors.muted }]}>
+                <Text style={[styles.thRegion, { color: colors.mutedForeground }]}>Country</Text>
+                <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Ops</Text>
+                <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Avail</Text>
+                <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Avg</Text>
+                <Text style={[styles.thCol, { color: colors.mutedForeground }]}>Days</Text>
+              </View>
+              {market.regions.map((row, idx) => (
+                <View
+                  key={row.country}
+                  style={[
+                    styles.tableRow,
+                    idx < market.regions.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+                  ]}
+                >
+                  <View style={styles.thRegionCell}>
+                    <Text style={[styles.tdRegion, { color: colors.foreground }]}>{row.country}</Text>
                   </View>
-                  <Text style={[styles.demandPct, { color: colors.mutedForeground }]}>
-                    {Math.round(row.demand * 100)}%
+                  <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>{row.operator_count}</Text>
+                  <Text style={[styles.tdCol, { color: "#10B981" }]}>{row.available_count}</Text>
+                  <Text style={[styles.tdCol, { color: colors.primary, fontFamily: "Inter_700Bold" }]}>{money(row.avg_price_per_kg)}</Text>
+                  <Text style={[styles.tdCol, { color: colors.mutedForeground }]}>
+                    {row.avg_turnaround_days === null ? "—" : row.avg_turnaround_days}
                   </Text>
                 </View>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* ── Certification market share ────────────────────────────────── */}
+        {/* ── Certification coverage ───────────────────────────────────── */}
         <View style={[styles.section, { paddingHorizontal: 16 }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Certification Coverage</Text>
           <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
-            Share of operators holding each certification
+            Share of listed operators holding each certification
           </Text>
-          <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {CERT_DATA.map((row, idx) => {
-              const color = CERT_COLORS[row.cert] ?? colors.primary;
-              return (
-                <View
-                  key={row.cert}
-                  style={[
-                    styles.certRow,
-                    idx < CERT_DATA.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-                  ]}
-                >
-                  <View style={{ width: 80 }}>
-                    <Text style={[styles.certName, { color: colors.foreground }]}>{row.cert}</Text>
-                  </View>
-                  <View style={styles.certBarWrap}>
-                    <View style={[styles.certBarBg, { backgroundColor: colors.muted }]}>
-                      <View
-                        style={[
-                          styles.certBarFill,
-                          { width: `${row.pct}%` as any, backgroundColor: color },
-                        ]}
-                      />
+          {loadingMarket ? (
+            <EmptyMarket label="Loading…" />
+          ) : !market || market.certifications.length === 0 ? (
+            <EmptyMarket label="No certifications recorded yet" />
+          ) : (
+            <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {market.certifications.map((row, idx) => {
+                const color = certColor(row.certification, idx);
+                return (
+                  <View
+                    key={row.certification}
+                    style={[
+                      styles.certRow,
+                      idx < market.certifications.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+                    ]}
+                  >
+                    <View style={{ width: 80 }}>
+                      <Text style={[styles.certName, { color: colors.foreground }]} numberOfLines={1}>
+                        {row.certification}
+                      </Text>
                     </View>
+                    <View style={styles.certBarWrap}>
+                      <View style={[styles.certBarBg, { backgroundColor: colors.muted }]}>
+                        <View
+                          style={[
+                            styles.certBarFill,
+                            { width: `${row.pct_of_operators}%` as any, backgroundColor: color },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                    <Text style={[styles.certPct, { color }]}>{row.pct_of_operators}%</Text>
                   </View>
-                  <Text style={[styles.certPct, { color: color }]}>{row.pct}%</Text>
-                </View>
-              );
-            })}
-          </View>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* ── Network Activity ────────────────────────────────────────── */}
@@ -490,24 +548,11 @@ const styles = StyleSheet.create({
   thCategory: { flex: 2, fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
   thCol: { width: 52, fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", textAlign: "right" },
   thRegion: { flex: 1.4, fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase" },
-  thDemand: { width: 70, fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", textAlign: "right" },
   tableRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 11 },
   tdCategory: { flex: 2, fontSize: 13, fontFamily: "Inter_500Medium" },
   tdCol: { width: 52, fontSize: 13, fontFamily: "Inter_500Medium", textAlign: "right" },
   tdRegion: { fontSize: 13, fontFamily: "Inter_500Medium" },
   thRegionCell: { flex: 1.4 },
-
-  regionTabs: {
-    flexDirection: "row", borderRadius: 10, borderWidth: StyleSheet.hairlineWidth,
-    padding: 3, marginBottom: 10,
-  },
-  regionTab: { flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: "center" },
-  regionTabText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-
-  demandCell: { width: 70, flexDirection: "row", alignItems: "center", gap: 5, justifyContent: "flex-end" },
-  demandBar: { flex: 1, height: 6, borderRadius: 3, overflow: "hidden" },
-  demandFill: { height: "100%", borderRadius: 3 },
-  demandPct: { width: 26, fontSize: 11, fontFamily: "Inter_500Medium", textAlign: "right" },
 
   certRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 11, gap: 10 },
   certName: { fontSize: 13, fontFamily: "Inter_500Medium" },

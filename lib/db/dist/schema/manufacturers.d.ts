@@ -680,27 +680,27 @@ export declare const manufacturerReviewsTable: import("drizzle-orm/pg-core").PgT
 }>;
 export declare const insertManufacturerSchema: z.ZodObject<{
     name: z.ZodString;
+    description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    certifications: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    review_count: z.ZodOptional<z.ZodInt>;
+    website_url: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    country: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    active: z.ZodOptional<z.ZodBoolean>;
+    contact_name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    contact_email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     slug: z.ZodString;
     tagline: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    website_url: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     logo_url: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     cover_image_url: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     images: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    country: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     founded_year: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     specialties: z.ZodOptional<z.ZodArray<z.ZodString>>;
     market_focus: z.ZodOptional<z.ZodArray<z.ZodString>>;
     featured: z.ZodOptional<z.ZodBoolean>;
     avg_rating: z.ZodOptional<z.ZodNumber>;
-    review_count: z.ZodOptional<z.ZodInt>;
-    contact_name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    contact_email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    certifications: z.ZodOptional<z.ZodArray<z.ZodString>>;
     production_capabilities: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    active: z.ZodOptional<z.ZodBoolean>;
 }, {
     out: {};
     in: {};

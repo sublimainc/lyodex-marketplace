@@ -3,12 +3,19 @@ import { db } from "@workspace/db";
 import { usersTable, operatorsTable, requestsTable, bidsTable, activityTable, requestMessagesTable, systemAlertsTable, adminAuditLogsTable, disputesTable, priceDataPointsTable, operatorListingsTable, operatorProductsTable, listingNotificationsTable, manufacturersTable, machineryListingsTable, insertMachineryListingSchema, reportSnapshotsTable, siteSettingsTable } from "@workspace/db/schema";
 import { eq, desc, count, sql, gte, lte, and, isNull, ilike, or, inArray, type SQL } from "drizzle-orm";
 import { sendDisputeResolvedEmail, sendListingApprovedEmail, sendListingRejectedEmail } from "../lib/email";
-import { requireAuth, requireRole } from "../middleware/requireAuth";
+import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
 import { z } from "zod/v4";
 
 const router: IRouter = Router();
-const adminOnly = [requireAuth, requireRole("admin")];
+// Guard stacks by capability. `adminOnly` remains the read-level baseline that
+// every admin sub-role satisfies; the others narrow access to admins whose
+// sub-role carries that capability. An admin with a null sub-role keeps full
+// access (see lib/adminPermissions.ts) so pre-existing accounts are unaffected.
+const adminOnly = [requireAuth, requireRole("admin"), requireAdminCapability("read")];
+const adminModerate = [requireAuth, requireRole("admin"), requireAdminCapability("moderate")];
+const adminFinance = [requireAuth, requireRole("admin"), requireAdminCapability("finance")];
+const adminManage = [requireAuth, requireRole("admin"), requireAdminCapability("manage_admins")];
 
 // ─── Admin Zod validation schemas ────────────────────────────────────────────
 
@@ -302,13 +309,30 @@ router.get("/admin/users", ...adminOnly, async (_req, res) => {
 // Valid values: super_admin | support_admin | finance_admin | data_analyst | ad_manager | null
 const VALID_ADMIN_ROLES = ["super_admin", "support_admin", "finance_admin", "data_analyst", "ad_manager"];
 
-router.patch("/admin/users/:id/admin-role", ...adminOnly, async (req, res) => {
+router.patch("/admin/users/:id/admin-role", ...adminManage, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   const { admin_role } = req.body as { admin_role: string | null };
-  if (admin_role !== null && !VALID_ADMIN_ROLES.includes(admin_role)) {
-    return res.status(400).json({ error: `Invalid admin_role. Must be one of: ${VALID_ADMIN_ROLES.join(", ")} or null` });
+  // `null` is deliberately NOT accepted. A null sub-role resolves to full
+  // super_admin access for backwards compatibility with admin rows that predate
+  // this column, so "clearing" a role would silently *promote* the user — the
+  // opposite of what the caller intends and of what the audit log would record.
+  // To reduce someone's access, assign the narrower role explicitly.
+  if (!admin_role || !VALID_ADMIN_ROLES.includes(admin_role)) {
+    return res.status(400).json({
+      error: `Invalid admin_role. Must be one of: ${VALID_ADMIN_ROLES.join(", ")}. ` +
+        `Clearing the role is not allowed — it would grant full access. Assign "data_analyst" for read-only.`,
+    });
+  }
+
+  // Self-demotion lockout guard: only super_admin holds `manage_admins`, so an
+  // admin narrowing their own sub-role could strip the platform of anyone able
+  // to grant it back. Changing your own role must go through another admin.
+  if (id === req.user!.userId && admin_role !== "super_admin") {
+    return res.status(400).json({
+      error: "You cannot change your own admin role. Ask another super_admin to do it.",
+    });
   }
 
   const [user] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, id)).limit(1);
@@ -317,13 +341,13 @@ router.patch("/admin/users/:id/admin-role", ...adminOnly, async (req, res) => {
 
   await db.update(usersTable).set({ admin_role }).where(eq(usersTable.id, id));
   void logAdminAction(req.user!.userId, req.user!.email, "set_admin_role", "user", id, req.ip,
-    admin_role ? `Assigned role: ${admin_role}` : "Cleared admin sub-role");
+    `Assigned role: ${admin_role}`);
   return res.json({ ok: true, admin_role });
 });
 
 // ─── POST /api/admin/users/:id/unlock ────────────────────────────────────────
 // Manually clear a lockout so the user can log in again.
-router.post("/admin/users/:id/unlock", ...adminOnly, async (req, res) => {
+router.post("/admin/users/:id/unlock", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   await db.update(usersTable).set({ failed_login_count: 0, locked_until: null }).where(eq(usersTable.id, id));
@@ -332,7 +356,7 @@ router.post("/admin/users/:id/unlock", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/users/:id/ban ───────────────────────────────────────────
-router.post("/admin/users/:id/ban", ...adminOnly, async (req, res) => {
+router.post("/admin/users/:id/ban", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   // Bump session_version so any existing JWTs for this account are immediately
@@ -343,7 +367,7 @@ router.post("/admin/users/:id/ban", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/users/:id/unban ─────────────────────────────────────────
-router.post("/admin/users/:id/unban", ...adminOnly, async (req, res) => {
+router.post("/admin/users/:id/unban", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   await db.update(usersTable).set({ banned: false }).where(eq(usersTable.id, id));
@@ -353,7 +377,7 @@ router.post("/admin/users/:id/unban", ...adminOnly, async (req, res) => {
 
 // ─── POST /api/admin/users/:id/trigger-audit ─────────────────────────────────
 // For operator-role users: resolves their linked operator record via user_id FK
-router.post("/admin/users/:id/trigger-audit", ...adminOnly, async (req, res) => {
+router.post("/admin/users/:id/trigger-audit", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -398,7 +422,7 @@ router.get("/admin/operators", ...adminOnly, async (_req, res) => {
 });
 
 // ─── POST /api/admin/operators/:id/audit ─────────────────────────────────────
-router.post("/admin/operators/:id/audit", ...adminOnly, async (req, res) => {
+router.post("/admin/operators/:id/audit", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   await db
@@ -411,7 +435,7 @@ router.post("/admin/operators/:id/audit", ...adminOnly, async (req, res) => {
 
 // ─── PATCH /api/admin/operators/:id/certifications ───────────────────────────
 // Toggles a single cert's verified status and logs the action.
-router.patch("/admin/operators/:id/certifications", ...adminOnly, async (req, res) => {
+router.patch("/admin/operators/:id/certifications", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -462,7 +486,7 @@ router.patch("/admin/operators/:id/certifications", ...adminOnly, async (req, re
 });
 
 // ─── POST /api/admin/operators/:id/audited ───────────────────────────────────
-router.post("/admin/operators/:id/audited", ...adminOnly, async (req, res) => {
+router.post("/admin/operators/:id/audited", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   await db
@@ -474,7 +498,7 @@ router.post("/admin/operators/:id/audited", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/operators ────────────────────────────────────────────────
-router.post("/admin/operators", ...adminOnly, async (req, res) => {
+router.post("/admin/operators", ...adminModerate, async (req, res) => {
   const parsed = adminOperatorCreateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const d = parsed.data;
@@ -510,7 +534,7 @@ router.post("/admin/operators", ...adminOnly, async (req, res) => {
 });
 
 // ─── PUT /api/admin/operators/:id ─────────────────────────────────────────────
-router.put("/admin/operators/:id", ...adminOnly, async (req, res) => {
+router.put("/admin/operators/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -528,7 +552,7 @@ router.put("/admin/operators/:id", ...adminOnly, async (req, res) => {
 });
 
 // ─── DELETE /api/admin/operators/:id ──────────────────────────────────────────
-router.delete("/admin/operators/:id", ...adminOnly, async (req, res) => {
+router.delete("/admin/operators/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -555,7 +579,7 @@ router.get("/admin/manufacturers", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/manufacturers ────────────────────────────────────────────
-router.post("/admin/manufacturers", ...adminOnly, async (req, res) => {
+router.post("/admin/manufacturers", ...adminModerate, async (req, res) => {
   const parsed = adminManufacturerCreateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const d = parsed.data;
@@ -588,7 +612,7 @@ router.post("/admin/manufacturers", ...adminOnly, async (req, res) => {
 });
 
 // ─── PUT /api/admin/manufacturers/:id ─────────────────────────────────────────
-router.put("/admin/manufacturers/:id", ...adminOnly, async (req, res) => {
+router.put("/admin/manufacturers/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -606,7 +630,7 @@ router.put("/admin/manufacturers/:id", ...adminOnly, async (req, res) => {
 });
 
 // ─── DELETE /api/admin/manufacturers/:id ──────────────────────────────────────
-router.delete("/admin/manufacturers/:id", ...adminOnly, async (req, res) => {
+router.delete("/admin/manufacturers/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -619,7 +643,7 @@ router.delete("/admin/manufacturers/:id", ...adminOnly, async (req, res) => {
 
 // ─── POST /api/admin/listings ─────────────────────────────────────────────────
 // Creates a capacity listing (listing_type=capacity) or product listing (listing_type=product)
-router.post("/admin/listings", ...adminOnly, async (req, res) => {
+router.post("/admin/listings", ...adminModerate, async (req, res) => {
   const parsed = adminListingCreateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const d = parsed.data;
@@ -661,7 +685,7 @@ router.post("/admin/listings", ...adminOnly, async (req, res) => {
 });
 
 // ─── PUT /api/admin/listings/:id ──────────────────────────────────────────────
-router.put("/admin/listings/:id", ...adminOnly, async (req, res) => {
+router.put("/admin/listings/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -693,7 +717,7 @@ router.put("/admin/listings/:id", ...adminOnly, async (req, res) => {
 });
 
 // ─── DELETE /api/admin/listings/:id ───────────────────────────────────────────
-router.delete("/admin/listings/:id", ...adminOnly, async (req, res) => {
+router.delete("/admin/listings/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -743,7 +767,7 @@ router.get("/admin/map-entries", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/map-entries ──────────────────────────────────────────────
-router.post("/admin/map-entries", ...adminOnly, async (req, res) => {
+router.post("/admin/map-entries", ...adminModerate, async (req, res) => {
   const parsed = adminMapEntryCreateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const d = parsed.data;
@@ -785,7 +809,7 @@ router.get("/admin/machinery", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/machinery ────────────────────────────────────────────────
-router.post("/admin/machinery", ...adminOnly, async (req, res) => {
+router.post("/admin/machinery", ...adminModerate, async (req, res) => {
   const parsed = insertMachineryListingSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
@@ -795,7 +819,7 @@ router.post("/admin/machinery", ...adminOnly, async (req, res) => {
 });
 
 // ─── PUT /api/admin/machinery/:id ─────────────────────────────────────────────
-router.put("/admin/machinery/:id", ...adminOnly, async (req, res) => {
+router.put("/admin/machinery/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -814,7 +838,7 @@ router.put("/admin/machinery/:id", ...adminOnly, async (req, res) => {
 });
 
 // ─── DELETE /api/admin/machinery/:id ──────────────────────────────────────────
-router.delete("/admin/machinery/:id", ...adminOnly, async (req, res) => {
+router.delete("/admin/machinery/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -848,7 +872,7 @@ router.get("/admin/requests", ...adminOnly, async (_req, res) => {
 });
 
 // ─── POST /api/admin/requests/:id/close ──────────────────────────────────────
-router.post("/admin/requests/:id/close", ...adminOnly, async (req, res) => {
+router.post("/admin/requests/:id/close", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -872,7 +896,7 @@ router.post("/admin/requests/:id/close", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/requests/:id/remove ─────────────────────────────────────
-router.post("/admin/requests/:id/remove", ...adminOnly, async (req, res) => {
+router.post("/admin/requests/:id/remove", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -899,7 +923,7 @@ router.post("/admin/requests/:id/remove", ...adminOnly, async (req, res) => {
 
 // ─── GET /api/admin/transactions ─────────────────────────────────────────────
 // Returns completed (accepted) contracts only
-router.get("/admin/transactions", ...adminOnly, async (_req, res) => {
+router.get("/admin/transactions", ...adminFinance, async (_req, res) => {
   const rows = await db
     .select({
       bid_id: bidsTable.id,
@@ -1071,7 +1095,7 @@ router.get("/admin/notifications", ...adminOnly, async (req, res) => {
 });
 
 // ─── POST /api/admin/notifications/clear ─────────────────────────────────────
-router.post("/admin/notifications/clear", ...adminOnly, async (req, res) => {
+router.post("/admin/notifications/clear", ...adminModerate, async (req, res) => {
   const userId = req.user!.userId;
   await db
     .update(usersTable)
@@ -1107,7 +1131,7 @@ router.get("/admin/system-alerts", ...adminOnly, async (_req, res) => {
 });
 
 // ─── POST /api/admin/system-alerts/:id/dismiss ────────────────────────────────
-router.post("/admin/system-alerts/:id/dismiss", ...adminOnly, async (req, res) => {
+router.post("/admin/system-alerts/:id/dismiss", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const [updated] = await db
@@ -1134,7 +1158,7 @@ router.get("/admin/disputes", ...adminOnly, async (_req, res) => {
 });
 
 // ─── PATCH /api/admin/disputes/:id ────────────────────────────────────────────
-router.patch("/admin/disputes/:id", ...adminOnly, async (req, res) => {
+router.patch("/admin/disputes/:id", ...adminFinance, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -1270,7 +1294,7 @@ router.get("/admin/price-data/export", ...adminOnly, async (_req, res) => {
 
 // ─── PATCH /api/admin/price-data/:id ──────────────────────────────────────────
 // Admin can update confidence level, inclusion flag, or add internal notes.
-router.patch("/admin/price-data/:id", ...adminOnly, async (req, res) => {
+router.patch("/admin/price-data/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { return res.status(400).json({ error: "Invalid id" }); }
 
@@ -1322,7 +1346,7 @@ router.get("/admin/listings", ...adminOnly, async (_req, res) => {
 });
 
 // PATCH /api/admin/listings/capacity/:id/approve
-router.patch("/admin/listings/capacity/:id/approve", ...adminOnly, async (req, res) => {
+router.patch("/admin/listings/capacity/:id/approve", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -1359,7 +1383,7 @@ router.patch("/admin/listings/capacity/:id/approve", ...adminOnly, async (req, r
 });
 
 // PATCH /api/admin/listings/capacity/:id/reject
-router.patch("/admin/listings/capacity/:id/reject", ...adminOnly, async (req, res) => {
+router.patch("/admin/listings/capacity/:id/reject", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -1400,7 +1424,7 @@ router.patch("/admin/listings/capacity/:id/reject", ...adminOnly, async (req, re
 });
 
 // PATCH /api/admin/listings/product/:id/approve
-router.patch("/admin/listings/product/:id/approve", ...adminOnly, async (req, res) => {
+router.patch("/admin/listings/product/:id/approve", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -1439,7 +1463,7 @@ router.patch("/admin/listings/product/:id/approve", ...adminOnly, async (req, re
 });
 
 // PATCH /api/admin/listings/product/:id/reject
-router.patch("/admin/listings/product/:id/reject", ...adminOnly, async (req, res) => {
+router.patch("/admin/listings/product/:id/reject", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -1771,7 +1795,7 @@ router.get("/admin/market-intelligence", ...adminOnly, async (req, res) => {
 
 // ─── PATCH /api/admin/market-intelligence/override ────────────────────────────
 // Persists a manual admin correction to site_settings under key "mi_overrides".
-router.patch("/admin/market-intelligence/override", ...adminOnly, async (req, res) => {
+router.patch("/admin/market-intelligence/override", ...adminModerate, async (req, res) => {
   const { key, value, note } = req.body as { key?: string; value?: unknown; note?: string };
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   if (typeof value !== "number") return res.status(400).json({ error: "value must be a number" });
@@ -1822,7 +1846,7 @@ router.get("/admin/scheduled-report-settings", ...adminOnly, async (_req, res) =
 });
 
 // ─── PATCH /api/admin/scheduled-report-settings ───────────────────────────────
-router.patch("/admin/scheduled-report-settings", ...adminOnly, async (req, res) => {
+router.patch("/admin/scheduled-report-settings", ...adminModerate, async (req, res) => {
   const schema = z.object({
     enabled: z.boolean().optional(),
     cadence: z.enum(["weekly", "monthly"]).optional(),
@@ -1864,7 +1888,7 @@ router.patch("/admin/scheduled-report-settings", ...adminOnly, async (req, res) 
 
 // ─── POST /api/admin/reports/generate ────────────────────────────────────────
 // Builds a report data snapshot from platform data and persists it.
-router.post("/admin/reports/generate", ...adminOnly, async (req, res) => {
+router.post("/admin/reports/generate", ...adminModerate, async (req, res) => {
   const generateSchema = z.object({
     type: z.enum(["weekly", "monthly", "custom"]).default("custom"),
     date_range_start: z.string().min(1),
@@ -2145,7 +2169,7 @@ router.get("/admin/reports/:id", ...adminOnly, async (req, res) => {
 });
 
 // ─── DELETE /api/admin/reports/:id ────────────────────────────────────────────
-router.delete("/admin/reports/:id", ...adminOnly, async (req, res) => {
+router.delete("/admin/reports/:id", ...adminModerate, async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 

@@ -1,13 +1,38 @@
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { ArrowRight, Box, BarChart3, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
 
 const STEP_ICONS = [Box, BarChart3, ShieldCheck];
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// Platform counters shown in the hero. Sourced from the same aggregation
+// endpoint as the market intelligence page so the two can never disagree —
+// and so the homepage never advertises a number that isn't real.
+interface MarketStats {
+  total_operators: number;
+  available_operators: number;
+  total_requests: number;
+  total_quotes: number;
+  accepted_contracts: number;
+  avg_quoted_price: number | null;
+  avg_turnaround_days: number | null;
+}
 
 export default function Home() {
   const { t } = useLanguage();
   const h = t.home;
+
+  const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${BASE}/api/market/analytics`)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: { platform: MarketStats }) => { if (!cancelled) setMarketStats(d.platform); })
+      .catch(() => { /* hero falls back to "—"; never invents a number */ });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -46,10 +71,19 @@ export default function Home() {
       {/* Stats */}
       <section className="py-14 bg-muted/30 border-y">
         <div className="container mx-auto px-4">
+          {/* Plain platform counts, straight from the database. Deliberately
+              not "impressive" numbers — whatever is true is what is shown. */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {h.stats.map((stat, i) => (
+            {[
+              { label: h.statOperators, value: marketStats?.total_operators },
+              { label: h.statRequests, value: marketStats?.total_requests },
+              { label: h.statBids, value: marketStats?.total_quotes },
+              { label: h.statContracts, value: marketStats?.accepted_contracts },
+            ].map((stat, i) => (
               <div key={i}>
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
+                  {stat.value === undefined ? "—" : stat.value.toLocaleString()}
+                </div>
                 <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</div>
               </div>
             ))}
@@ -108,15 +142,35 @@ export default function Home() {
             </div>
             <div className="flex-1 grid grid-cols-2 gap-4">
               {[
-                { label: "Avg. food-grade price", value: "$9.40/kg", sub: "+4.2% vs last month" },
-                { label: "Avg. GMP-grade price", value: "$28.20/kg", sub: "+2% vs last month" },
-                { label: "Active operators", value: "22", sub: "7 available now" },
-                { label: "Avg. response time", value: "38h", sub: "−8% vs 3 months ago" },
+                {
+                  label: "Operators listed",
+                  value: marketStats ? String(marketStats.total_operators) : null,
+                  sub: marketStats ? `${marketStats.available_operators} available now` : "",
+                },
+                {
+                  label: "Avg. quoted price",
+                  value: marketStats?.avg_quoted_price != null ? `$${marketStats.avg_quoted_price.toFixed(2)}/kg` : null,
+                  sub: "across all bids",
+                },
+                {
+                  label: "RFQs submitted",
+                  value: marketStats ? String(marketStats.total_requests) : null,
+                  sub: marketStats ? `${marketStats.total_quotes} bids received` : "",
+                },
+                {
+                  label: "Avg. quoted turnaround",
+                  value: marketStats?.avg_turnaround_days != null ? `${marketStats.avg_turnaround_days} days` : null,
+                  sub: "across all bids",
+                },
               ].map((kpi, i) => (
                 <div key={i} className="p-5 rounded-xl border bg-background shadow-sm">
                   <p className="text-xs text-muted-foreground mb-1">{kpi.label}</p>
-                  <div className="text-2xl font-bold text-primary mb-1">{kpi.value}</div>
-                  <p className="text-xs text-emerald-600 font-medium">{kpi.sub}</p>
+                  {/* A null value means the figure is withheld or still loading —
+                      never substitute a placeholder number. */}
+                  <div className="text-2xl font-bold text-primary mb-1">{kpi.value ?? "—"}</div>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    {kpi.value ? kpi.sub : "Not enough data yet"}
+                  </p>
                 </div>
               ))}
             </div>

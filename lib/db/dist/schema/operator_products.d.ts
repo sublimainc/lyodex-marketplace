@@ -281,17 +281,17 @@ export declare const operatorProductsTable: import("drizzle-orm/pg-core").PgTabl
 export declare const insertOperatorProductSchema: z.ZodObject<{
     user_id: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     name: z.ZodString;
-    operator_name: z.ZodOptional<z.ZodString>;
+    description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    available: z.ZodOptional<z.ZodBoolean>;
+    contact_email: z.ZodOptional<z.ZodString>;
     material_type: z.ZodString;
+    operator_name: z.ZodOptional<z.ZodString>;
+    approval_status: z.ZodOptional<z.ZodString>;
+    approval_reason: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     weight_kg: z.ZodNumber;
     moisture_pct: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     price_per_unit: z.ZodNumber;
     moq: z.ZodOptional<z.ZodInt>;
-    available: z.ZodOptional<z.ZodBoolean>;
-    description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    contact_email: z.ZodOptional<z.ZodString>;
-    approval_status: z.ZodOptional<z.ZodString>;
-    approval_reason: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, {
     out: {};
     in: {};

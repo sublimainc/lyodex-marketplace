@@ -1,4 +1,5 @@
-import { pgTable, serial, text, integer, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, real, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -23,7 +24,15 @@ export const bidsTable = pgTable("bids", {
   materials_received_at: timestamp("materials_received_at"),  // when operator logged materials received
   processing_start_date: text("processing_start_date"),       // YYYY-MM-DD, set when materials received
   job_status_updated_at: timestamp("job_status_updated_at"),  // last status change
-});
+}, (table) => [
+  // One live bid per operator per request, enforced by the database.
+  // The application also checks this before inserting, but that check is a
+  // read-then-write and two concurrent submissions can both pass it. Partial,
+  // so an operator can re-bid after withdrawing or being rejected.
+  uniqueIndex("bids_one_active_per_operator_per_request")
+    .on(table.request_id, table.operator_id)
+    .where(sql`status in ('pending', 'pending_escrow', 'accepted')`),
+]);
 
 export const insertBidSchema = createInsertSchema(bidsTable).omit({ id: true, created_at: true });
 export type InsertBid = z.infer<typeof insertBidSchema>;

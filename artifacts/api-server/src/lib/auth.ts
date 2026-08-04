@@ -35,6 +35,15 @@ export interface JwtPayload {
   role: string;
   name: string;
   sessionVersion: number;
+  /**
+   * Admin sub-role at the time the token was issued.
+   *
+   * Carried for convenience only — requireAuth re-reads this column from the
+   * database on every request and overwrites it, so a demotion takes effect
+   * immediately instead of waiting out the 7-day token lifetime. Never
+   * authorize from the token copy alone.
+   */
+  adminRole?: string | null;
 }
 
 export function signToken(payload: JwtPayload): string {

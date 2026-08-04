@@ -271,15 +271,15 @@ export declare const blogPostsTable: import("drizzle-orm/pg-core").PgTableWithCo
     dialect: "pg";
 }>;
 export declare const insertBlogPostSchema: z.ZodObject<{
-    slug: z.ZodString;
-    title: z.ZodString;
+    status: z.ZodOptional<z.ZodString>;
     body: z.ZodOptional<z.ZodString>;
-    seo_description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    title: z.ZodString;
+    slug: z.ZodString;
     cover_image_url: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    seo_description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     category: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     author: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     tags: z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodString>>>;
-    status: z.ZodOptional<z.ZodString>;
     published_at: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
     created_by: z.ZodInt;
 }, {

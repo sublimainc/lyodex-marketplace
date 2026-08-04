@@ -289,15 +289,15 @@ export declare const operatorListingsTable: import("drizzle-orm/pg-core").PgTabl
 }>;
 export declare const insertOperatorListingSchema: z.ZodObject<{
     user_id: z.ZodInt;
-    operator_id: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
-    equipment_type: z.ZodString;
     capacity_kg: z.ZodInt;
     certifications: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    price_per_kg_min: z.ZodNumber;
-    price_per_kg_max: z.ZodNumber;
     turnaround_days: z.ZodInt;
     available: z.ZodOptional<z.ZodBoolean>;
+    operator_id: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    equipment_type: z.ZodString;
+    price_per_kg_min: z.ZodNumber;
+    price_per_kg_max: z.ZodNumber;
     approval_status: z.ZodOptional<z.ZodString>;
     approval_reason: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, {

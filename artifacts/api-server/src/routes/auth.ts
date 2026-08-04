@@ -97,7 +97,7 @@ router.post("/auth/register", registerLimiter, async (req, res) => {
     });
   }
 
-  const token = signToken({ userId: user.id, email: user.email, role: user.role, name: user.name, sessionVersion: user.session_version });
+  const token = signToken({ userId: user.id, email: user.email, role: user.role, name: user.name, sessionVersion: user.session_version, adminRole: user.admin_role });
   res.cookie(COOKIE_NAME, token, cookieOptions());
 
   return res.status(201).json({ userId: user.id, name: user.name, email: user.email, role: user.role });
@@ -178,7 +178,7 @@ router.post("/auth/login", loginLimiter, async (req, res) => {
     }
   }
 
-  const token = signToken({ userId: user.id, email: user.email, role: user.role, name: user.name, sessionVersion: user.session_version });
+  const token = signToken({ userId: user.id, email: user.email, role: user.role, name: user.name, sessionVersion: user.session_version, adminRole: user.admin_role });
   res.cookie(COOKIE_NAME, token, cookieOptions());
 
   return res.json({ userId: user.id, name: user.name, email: user.email, role: user.role });
@@ -251,7 +251,7 @@ router.post("/auth/reset-password", async (req, res) => {
   const { token, password } = parsed.data;
 
   const [user] = await db
-    .select({ id: usersTable.id, email: usersTable.email, role: usersTable.role, name: usersTable.name, password_reset_expires: usersTable.password_reset_expires, session_version: usersTable.session_version })
+    .select({ id: usersTable.id, email: usersTable.email, role: usersTable.role, name: usersTable.name, admin_role: usersTable.admin_role, password_reset_expires: usersTable.password_reset_expires, session_version: usersTable.session_version })
     .from(usersTable)
     .where(and(
       eq(usersTable.password_reset_token, token),
@@ -280,7 +280,7 @@ router.post("/auth/reset-password", async (req, res) => {
   logger.info({ userId: user.id, email: user.email }, "Password reset successfully — all prior sessions invalidated");
 
   // Sign a new session so the user is immediately logged in
-  const newToken = signToken({ userId: user.id, email: user.email, role: user.role, name: user.name, sessionVersion: newSessionVersion });
+  const newToken = signToken({ userId: user.id, email: user.email, role: user.role, name: user.name, sessionVersion: newSessionVersion, adminRole: user.admin_role });
   res.cookie(COOKIE_NAME, newToken, cookieOptions());
 
   return res.json({ ok: true, role: user.role });
@@ -351,7 +351,7 @@ router.patch("/auth/profile", requireAuth, async (req, res) => {
     await db.update(usersTable).set(updates).where(eq(usersTable.id, userId));
   }
 
-  const newToken = signToken({ userId: user.id, email: finalEmail, role: user.role, name: finalName, sessionVersion: finalSessionVersion });
+  const newToken = signToken({ userId: user.id, email: finalEmail, role: user.role, name: finalName, sessionVersion: finalSessionVersion, adminRole: user.admin_role });
   res.cookie(COOKIE_NAME, newToken, cookieOptions());
 
   logger.info({ userId, updates: Object.keys(updates) }, "User profile updated");
@@ -363,7 +363,7 @@ router.patch("/auth/profile", requireAuth, async (req, res) => {
 // current account state (not a stale JWT snapshot).
 router.get("/auth/me", requireAuth, async (req, res) => {
   const [user] = await db
-    .select({ userId: usersTable.id, email: usersTable.email, role: usersTable.role, name: usersTable.name })
+    .select({ userId: usersTable.id, email: usersTable.email, role: usersTable.role, name: usersTable.name, admin_role: usersTable.admin_role })
     .from(usersTable)
     .where(eq(usersTable.id, req.user!.userId))
     .limit(1);
@@ -373,7 +373,7 @@ router.get("/auth/me", requireAuth, async (req, res) => {
 
 router.get("/me", requireAuth, async (req, res) => {
   const [user] = await db
-    .select({ userId: usersTable.id, email: usersTable.email, role: usersTable.role, name: usersTable.name })
+    .select({ userId: usersTable.id, email: usersTable.email, role: usersTable.role, name: usersTable.name, admin_role: usersTable.admin_role })
     .from(usersTable)
     .where(eq(usersTable.id, req.user!.userId))
     .limit(1);

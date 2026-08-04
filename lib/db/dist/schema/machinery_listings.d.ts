@@ -375,23 +375,23 @@ export declare const machineryListingsTable: import("drizzle-orm/pg-core").PgTab
     dialect: "pg";
 }>;
 export declare const insertMachineryListingSchema: z.ZodObject<{
+    user_id: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    contact_name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    contact_email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    operator_id: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     title: z.ZodString;
+    images: z.ZodOptional<z.ZodArray<z.ZodString>>;
     category: z.ZodOptional<z.ZodString>;
     listing_status: z.ZodOptional<z.ZodString>;
     condition: z.ZodOptional<z.ZodString>;
-    description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     price: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     currency: z.ZodOptional<z.ZodString>;
     manufacturer_name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     model_number: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     year_manufactured: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     technical_specs: z.ZodOptional<z.ZodNullable<z.ZodType<Record<string, string>, Record<string, string>, z.core.$ZodTypeInternals<Record<string, string>, Record<string, string>>>>>;
-    images: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    contact_name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    contact_email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    operator_id: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
-    user_id: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
 }, {
     out: {};
     in: {};

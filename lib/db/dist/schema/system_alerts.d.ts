@@ -126,9 +126,9 @@ export declare const systemAlertsTable: import("drizzle-orm/pg-core").PgTableWit
     dialect: "pg";
 }>;
 export declare const insertSystemAlertSchema: z.ZodObject<{
+    message: z.ZodString;
     alert_key: z.ZodString;
     title: z.ZodString;
-    message: z.ZodString;
     metadata: z.ZodOptional<z.ZodNullable<z.ZodType<import("drizzle-zod").Json, unknown, z.core.$ZodTypeInternals<import("drizzle-zod").Json, unknown>>>>;
     dismissed_at: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
 }, {

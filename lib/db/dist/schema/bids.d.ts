@@ -330,13 +330,13 @@ export declare const bidsTable: import("drizzle-orm/pg-core").PgTableWithColumns
     dialect: "pg";
 }>;
 export declare const insertBidSchema: z.ZodObject<{
+    price_per_kg: z.ZodNumber;
+    turnaround_days: z.ZodInt;
+    status: z.ZodOptional<z.ZodString>;
     request_id: z.ZodInt;
     operator_id: z.ZodInt;
     operator_name: z.ZodOptional<z.ZodString>;
-    price_per_kg: z.ZodNumber;
-    turnaround_days: z.ZodInt;
     notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    status: z.ZodOptional<z.ZodString>;
     fee_status: z.ZodOptional<z.ZodString>;
     stripe_session_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     escrow_status: z.ZodOptional<z.ZodString>;

@@ -130,12 +130,26 @@ export default function Trust() {
         {/* Market intelligence */}
         <section>
           <h2 className="text-xl font-semibold mb-1">Market intelligence</h2>
-          <Card className="border-amber-200 bg-amber-50">
-            <CardContent className="pt-5 pb-4">
-              <p className="text-sm text-amber-900 font-medium mb-1">Benchmark data — not verified transaction prices</p>
-              <p className="text-sm text-amber-800">
-                The pricing benchmarks and volume indicators on the Market Intelligence page are <strong>illustrative estimates</strong> based on publicly available industry reports, operator-published rate cards, and aggregated RFQ data submitted by LyoDex users. They are not audited financial data. Ranges are wide by design to reflect real market variability. Always negotiate directly with operators for accurate project pricing.
-              </p>
+          <Card>
+            <CardContent className="pt-5 pb-4 space-y-3">
+              <div>
+                <p className="text-sm font-medium mb-1">Computed from platform activity — not an industry survey</p>
+                <p className="text-sm text-muted-foreground">
+                  Every figure on the Market Intelligence page is computed directly from activity on LyoDex: operators listed, RFQs submitted by buyers, and bids submitted by operators. Nothing on that page is estimated, modelled, or sourced from third-party reports.
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1">How we protect individual pricing</p>
+                <p className="text-sm text-muted-foreground">
+                  A price aggregate is published only once at least <strong>3 independent observations</strong> exist for that material, country, or month. Below that threshold the figure is withheld and shown as "—", because an "average" of one or two bids would expose an individual operator's rate card. Individual operator pricing is never disclosed.
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1">What these figures are not</p>
+                <p className="text-sm text-muted-foreground">
+                  They reflect <strong>quoted</strong> prices on this platform, which is a sample of the market rather than the whole market. They are not audited financial data, not a valuation, and not a guarantee of the price you will be quoted. Always negotiate directly with operators for accurate project pricing.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </section>

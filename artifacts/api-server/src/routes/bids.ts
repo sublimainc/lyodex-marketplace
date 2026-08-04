@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, bidsTable, requestsTable, operatorsTable, activityTable, requestMessagesTable, usersTable, buyerNotificationsTable } from "@workspace/db";
 import { disputesTable, priceDataPointsTable } from "@workspace/db/schema";
-import { eq, sql, and, ne, or, isNull } from "drizzle-orm";
+import { eq, sql, and, ne, or, isNull, inArray } from "drizzle-orm";
 import {
   CreateBidBody,
   ListBidsForRequestParams,
@@ -11,6 +11,7 @@ import { requireAuth, requireRole, optionalAuth } from "../middleware/requireAut
 import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
 import { sendNewBidEmail, sendOnboardingIncompleteEmail } from "../lib/email";
+import { getPublicBaseUrl } from "../lib/publicUrl";
 
 const router: IRouter = Router();
 
@@ -137,15 +138,49 @@ router.post("/bids", requireAuth, requireRole("operator", "admin"), async (req, 
     return;
   }
 
+  // One live bid per operator per request. Without this an operator could flood
+  // a request with bids, distorting the bid_count shown to buyers and the
+  // per-category averages published on the market intelligence page.
+  // Withdrawn and rejected bids are excluded so an operator can re-bid.
+  const [existingOwnBid] = await db
+    .select({ id: bidsTable.id })
+    .from(bidsTable)
+    .where(and(
+      eq(bidsTable.request_id, parsed.data.request_id),
+      eq(bidsTable.operator_id, canonicalOperatorId),
+      inArray(bidsTable.status, ["pending", "pending_escrow", "accepted"]),
+    ))
+    .limit(1);
+  if (existingOwnBid) {
+    res.status(409).json({
+      error: "You already have an active bid on this request. Withdraw it before submitting a new one.",
+    });
+    return;
+  }
+
   const [operator] = await db.select().from(operatorsTable).where(eq(operatorsTable.id, canonicalOperatorId));
   const operatorName = operator?.name ?? req.user!.name ?? "Unknown Operator";
 
-  const [bid] = await db.insert(bidsTable).values({
-    ...parsed.data,
-    operator_id: canonicalOperatorId,
-    operator_name: operatorName,
-    status: "pending",
-  }).returning();
+  let bid: typeof bidsTable.$inferSelect;
+  try {
+    [bid] = await db.insert(bidsTable).values({
+      ...parsed.data,
+      operator_id: canonicalOperatorId,
+      operator_name: operatorName,
+      status: "pending",
+    }).returning();
+  } catch (err: any) {
+    // The check above is a read-then-write; two simultaneous submissions can
+    // both pass it. The partial unique index is the real guarantee, so translate
+    // its violation into the same 409 rather than a 500.
+    if (err?.code === "23505") {
+      res.status(409).json({
+        error: "You already have an active bid on this request. Withdraw it before submitting a new one.",
+      });
+      return;
+    }
+    throw err;
+  }
 
   await db.update(requestsTable)
     .set({ bid_count: sql`${requestsTable.bid_count} + 1` })
@@ -294,6 +329,29 @@ router.patch("/bids/:id/accept", requireAuth, requireRole("buyer", "admin"), asy
 
   try {
     updatedBid = await db.transaction(async (tx) => {
+      // Serialize all acceptances for this request by taking a row-level lock on
+      // the parent request first. Without it, two concurrent accepts on two
+      // different bids can both pass the exclusivity check below before either
+      // commits (READ COMMITTED sees neither other's uncommitted write), leaving
+      // two bids in pending_escrow and the buyer able to fund both.
+      // Any concurrent transaction now blocks here until the first one commits,
+      // then observes its result.
+      const [lockedRequest] = await tx
+        .select({ id: requestsTable.id, status: requestsTable.status })
+        .from(requestsTable)
+        .where(eq(requestsTable.id, bid.request_id))
+        .for("update")
+        .limit(1);
+
+      if (!lockedRequest) {
+        throw new Error("REQUEST_NOT_FOUND");
+      }
+      // Re-check under the lock: the request may have been closed or removed
+      // between the pre-flight read above and acquiring the lock.
+      if (lockedRequest.status === "closed" || lockedRequest.status === "removed") {
+        throw new Error("REQUEST_NO_LONGER_OPEN");
+      }
+
       // Exclusivity guard: within the transaction, verify no other bid on this
       // request is already pending_escrow or accepted. Without this, a buyer
       // could accept two bids before either webhook fires.
@@ -341,6 +399,10 @@ router.patch("/bids/:id/accept", requireAuth, requireRole("buyer", "admin"), asy
   } catch (err: any) {
     if (err?.message === "BID_NO_LONGER_PENDING") {
       res.status(409).json({ error: "This bid is no longer in pending status" });
+    } else if (err?.message === "REQUEST_NOT_FOUND") {
+      res.status(404).json({ error: "Request not found" });
+    } else if (err?.message === "REQUEST_NO_LONGER_OPEN") {
+      res.status(409).json({ error: "This request is no longer open" });
     } else if (err?.message === "ESCROW_ALREADY_PENDING") {
       res.status(409).json({ error: "Another bid on this request is already awaiting escrow payment. Only one bid can be accepted at a time." });
     } else if (err?.message === "REQUEST_ALREADY_ACCEPTED") {
@@ -351,14 +413,21 @@ router.patch("/bids/:id/accept", requireAuth, requireRole("buyer", "admin"), asy
     return;
   }
 
-  // ── Mark price data point as accepted ────────────────────────────────────
+  // ── Price data point stays UNACCEPTED here ───────────────────────────────
+  // Selecting a bid is not the same as awarding a contract: the buyer may never
+  // complete the escrow checkout. Marking the price as "accepted" now would
+  // publish prices for contracts that never happened.
+  //
+  // The flag is set in the Stripe webhook (app.ts), in the same transaction
+  // that funds escrow and closes the request — i.e. at the moment the contract
+  // genuinely exists. `quote_status` records that it is awaiting payment.
   try {
     await db
       .update(priceDataPointsTable)
-      .set({ accepted: true })
+      .set({ quote_status: "pending_escrow" })
       .where(eq(priceDataPointsTable.bid_id, bidId));
   } catch {
-    // Non-blocking
+    // Non-blocking — this is bookkeeping, not a gate on the checkout.
   }
 
   // ── Stripe escrow checkout (buyer pays full contract into escrow) ───────────
@@ -369,8 +438,7 @@ router.patch("/bids/:id/accept", requireAuth, requireRole("buyer", "admin"), asy
   let checkoutUrl: string | null = null;
   try {
     const stripe = await getUncachableStripeClient();
-    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-    const baseUrl = domain ? `https://${domain}` : "http://localhost:3000";
+    const baseUrl = getPublicBaseUrl();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

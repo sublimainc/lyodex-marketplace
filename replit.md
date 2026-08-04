@@ -35,8 +35,61 @@ A B2B marketplace connecting buyers with freeze-drying (lyophilization) operator
 - Contract-first: OpenAPI spec gates codegen which gates the frontend
 - All API routes use Zod schemas generated from the OpenAPI spec for validation
 - Frontend uses generated React Query hooks from `@workspace/api-client-react`
-- No auth implemented yet — login page is mock/demo only (buyer@lyodex.ca / demo123)
 - Seed data: 8 operators, 7 requests, 8 bids, 10 activity items
+
+## Authentication (real — not a mock)
+
+Production authentication is implemented in `artifacts/api-server/src/routes/auth.ts`
+and `src/lib/auth.ts`:
+
+- Passwords hashed with **bcrypt** (cost 12). Register stores the hash; login
+  compares against it.
+- Session carried in an httpOnly **JWT cookie** (`lyodex_token`, 7-day expiry).
+  `JWT_SECRET` is required in production — the server throws on boot without it.
+- **Failed-login lockout**: 5 failed attempts locks the account for 15 minutes
+  (`users.failed_login_count` / `users.locked_until`). Enforced regardless of
+  environment.
+- **Live revocation**: `middleware/requireAuth.ts` re-reads the user row on
+  every request and rejects banned, locked, or stale-`session_version` sessions.
+  Role and `admin_role` are also re-read there, so privilege changes take effect
+  on the next request rather than at token expiry.
+
+### Admin sub-roles
+
+`users.role = "admin"` grants entry to the admin panel; `users.admin_role`
+decides what that admin may do. Capabilities are defined in
+`src/lib/adminPermissions.ts` and enforced by `requireAdminCapability()`:
+
+| `admin_role` | read | moderate | finance | content | manage_admins |
+|---|:--:|:--:|:--:|:--:|:--:|
+| `super_admin` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `support_admin` | ✓ | ✓ | | | |
+| `finance_admin` | ✓ | | ✓ | | |
+| `data_analyst` | ✓ | | | | |
+| `ad_manager` | ✓ | | | ✓ | |
+| `null` (unset) | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+A null sub-role keeps full access so pre-existing admin accounts are not locked
+out. An admin cannot change their own sub-role.
+
+## Data honesty rules
+
+Public-facing numbers must be computed from real platform activity, or not
+shown at all. Two specific rules the codebase now follows:
+
+- **Market intelligence** (`/market-intelligence`) renders only what
+  `GET /api/market/analytics` returns, computed by
+  `src/lib/marketAggregation.ts` from live `bids` / `requests` / `operators`
+  rows. Price aggregates are withheld below **3 independent observations**
+  (`MIN_COHORT`) so no single operator's pricing can be reverse-engineered;
+  withheld values render as "—", never as zero or a placeholder.
+- **No fabricated records.** Demo sellers, sample listings, and illustrative
+  benchmarks must not be mixed into API responses alongside real rows. If there
+  is no data, the UI shows an honest empty state.
+
+Machinery listings follow the same principle: `POST /api/machinery` creates a
+`pending` row, and only admin-approved (`active`) listings are returned by
+`GET /api/machinery`.
 
 ## Schema sync (prevents "missing column" crashes)
 
@@ -79,7 +132,10 @@ All four addresses are clickable `mailto:` links in the site footer. Outbound em
 
 ### Production Secrets (required before publishing)
 
-These secrets must be set in the **Replit Secrets** panel before the first deployment:
+On Replit these go in the **Secrets** panel. Elsewhere, use `.env` / your host's
+secret manager — see `.env.example` and `DEPLOYMENT.md` for the full list,
+including the portable replacements for the Replit-managed integrations
+(`PUBLIC_APP_URL`, `STRIPE_SECRET_KEY`, `GCS_SERVICE_ACCOUNT_KEY`).
 
 | Secret | Description |
 |---|---|
@@ -153,6 +209,33 @@ These secrets must be set in the **Replit Secrets** panel before the first deplo
 - Original upload had no source code, only config/docs — frontend was built from documentation
 - `pnpm dev` at workspace root has no script — run per-artifact with --filter
 - Vite configs require `PORT` env var at dev time but skip that check during `vite build`
+- `pnpm run typecheck` at the root shells out to `pnpm`, which fails if pnpm is
+  only available through corepack. Run the per-package scripts instead:
+  `pnpm run typecheck:libs`, then `pnpm --filter <pkg> run typecheck`.
+- The api-server bundle **externalises** several packages (nodemailer,
+  `@google-cloud/*`, native modules — see `artifacts/api-server/build.mjs`), so
+  `node_modules` must be present at runtime, not just at build time.
+- **No automated tests exist anywhere in the repo.** Changes to payments,
+  auth, or bid acceptance are verified by hand.
+
+## Portability
+
+The app runs outside Replit without code changes — see `DEPLOYMENT.md`,
+`Dockerfile`, `docker-compose.yml`, and `.env.example`.
+
+Replit-specific behaviour is now a fallback, activated only when the portable
+environment variables are unset:
+
+| Concern | Portable | Replit fallback |
+|---|---|---|
+| Stripe keys | `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` | Connectors API |
+| Object storage | `GCS_SERVICE_ACCOUNT_KEY` or `GOOGLE_APPLICATION_CREDENTIALS` | sidecar on `127.0.0.1:1106` |
+| Public origin | `PUBLIC_APP_URL` | `REPLIT_DOMAINS` |
+
+`PUBLIC_APP_URL` is resolved once in `src/lib/publicUrl.ts` and used for every
+absolute URL the server emits (email links, Stripe redirects). In production the
+server throws if no public origin can be determined, rather than silently
+emitting links to the wrong host.
 
 ## Pointers
 

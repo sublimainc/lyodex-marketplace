@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
 import { getUncachableStripeClient, getStripePublishableKey } from "../stripeClient";
-import { requireAuth, requireRole } from "../middleware/requireAuth";
+import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
 import { db } from "@workspace/db";
 import { bidsTable, requestsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { checkWebhookHealth } from "../lib/webhookHealthMonitor";
+import { getPublicBaseUrl } from "../lib/publicUrl";
 
 const router: IRouter = Router();
 
@@ -57,8 +58,7 @@ router.post("/stripe/checkout", async (req, res): Promise<void> => {
 
   try {
     const stripe = await getUncachableStripeClient();
-    const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
-    const baseUrl = domains ? `https://${domains}` : "http://localhost:3000";
+    const baseUrl = getPublicBaseUrl();
 
     const sessionParams: any = {
       payment_method_types: ["card"],
@@ -120,8 +120,7 @@ router.post(
 
     try {
       const stripe = await getUncachableStripeClient();
-      const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
-      const baseUrl = domains ? `https://${domains}` : "http://localhost:3000";
+      const baseUrl = getPublicBaseUrl();
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
@@ -163,6 +162,8 @@ router.get(
   "/stripe/fee-webhook-health",
   requireAuth,
   requireRole("admin"),
+  // Payment-infrastructure diagnostics — restricted to finance-capable admins.
+  requireAdminCapability("finance"),
   async (_req, res) => {
     const result = await checkWebhookHealth();
 

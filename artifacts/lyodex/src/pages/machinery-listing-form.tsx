@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Package, Wrench, CheckCircle2, Upload, X, ImageIcon } from "lucide-react";
+import { ArrowLeft, Package, Wrench, CheckCircle2, Upload, X, ImageIcon, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLanguage } from "@/lib/i18n";
 
 type ListingType = "machine" | "parts";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -37,6 +39,9 @@ export default function MachineryListingForm() {
   const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("kg");
   const [negotiable, setNegotiable] = useState<"yes" | "no">("yes");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [contactEmail, setContactEmail] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
@@ -88,19 +93,79 @@ export default function MachineryListingForm() {
     setImages(prev => prev.filter((_, i) => i !== idx));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const imageNote = images.length > 0
-      ? `\n\nPhotos attached: ${images.map(f => f.name).join(", ")}\n(Please attach these image files to your email before sending.)`
-      : "";
-    const subject = type === "machine"
-      ? `New Machine Listing: ${form.machineName}`
-      : `New Parts Listing: ${form.partName}`;
-    const body = type === "machine"
-      ? `Machine: ${form.machineName}\nCapacity: ${form.capacity} ${weightUnit}/batch\nTrays: ${form.numTrays}\nRefrigerant: ${form.refrigerantSpecs}\nHeating: ${form.heatingSystem}${form.heatingSystemOther ? " - " + form.heatingSystemOther : ""}\nDefrost: ${form.defrostMethod}${form.defrostOther ? " - " + form.defrostOther : ""}\nSerial: ${form.serialNumber}\nLocation: ${form.machineLocation}\nCompressor: ${form.compressorBrand} - ${form.compressorSpecs}\nVacuum pump: ${form.vacuumPumpSpecs}\nBooster: ${form.boosterSpecs}\nCondenser: ${form.condenserSpecs}\nBatch capacity: ${form.batchCapacity} ${weightUnit}\nYear: ${form.yearManufacturing}\nDetails: ${form.moreDetails}\nPrice: $${form.priceAsked}\nNegotiable: ${negotiable}${imageNote}`
-      : `Part: ${form.partName}\nBrand: ${form.partBrand}\nYear: ${form.partYear}\nPrice: $${form.partPrice}\nLocation: ${form.partLocation}\nDescription: ${form.partDescription}${imageNote}`;
-    window.location.href = `mailto:listings@lyodex.ca?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSubmitted(true);
+    setError(null);
+    setSubmitting(true);
+
+    // The listing is created with status `pending`; it becomes publicly visible
+    // only after an admin approves it in the admin panel.
+    const isMachine = type === "machine";
+
+    // Free-text technical fields are stored in technical_specs rather than
+    // dropped into an email body, so admins and buyers can actually read them.
+    const specs: Record<string, string> = isMachine
+      ? {
+          capacity: form.capacity ? `${form.capacity} ${weightUnit}/batch` : "",
+          batch_capacity: form.batchCapacity ? `${form.batchCapacity} ${weightUnit}` : "",
+          trays: form.numTrays,
+          refrigerant: form.refrigerantSpecs,
+          heating: [form.heatingSystem, form.heatingSystemOther].filter(Boolean).join(" — "),
+          defrost: [form.defrostMethod, form.defrostOther].filter(Boolean).join(" — "),
+          serial_number: form.serialNumber,
+          compressor: [form.compressorBrand, form.compressorSpecs].filter(Boolean).join(" — "),
+          vacuum_pump: form.vacuumPumpSpecs,
+          booster: form.boosterSpecs,
+          condenser: form.condenserSpecs,
+          negotiable,
+          location: form.machineLocation,
+        }
+      : {
+          brand: form.partBrand,
+          negotiable,
+          location: form.partLocation,
+        };
+
+    // Drop empty values so the specs table stays clean.
+    const technical_specs = Object.fromEntries(
+      Object.entries(specs).filter(([, v]) => v && v.trim() !== ""),
+    );
+
+    const priceRaw = isMachine ? form.priceAsked : form.partPrice;
+    const yearRaw = isMachine ? form.yearManufacturing : form.partYear;
+    const parsedPrice = parseFloat(String(priceRaw).replace(/[^0-9.]/g, ""));
+    const parsedYear = parseInt(String(yearRaw), 10);
+
+    try {
+      const res = await fetch(`${BASE}/api/machinery`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: isMachine ? form.machineName : form.partName,
+          category: isMachine ? "freeze_dryers" : "parts",
+          condition: "used",
+          description: isMachine ? form.moreDetails : form.partDescription,
+          price: Number.isFinite(parsedPrice) ? parsedPrice : null,
+          currency: "CAD",
+          manufacturer_name: isMachine ? form.compressorBrand : form.partBrand,
+          model_number: isMachine ? form.serialNumber : undefined,
+          year_manufactured: Number.isFinite(parsedYear) ? parsedYear : null,
+          technical_specs,
+          contact_email: contactEmail,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? `HTTP ${res.status}`);
+      }
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : mf.submitError);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -386,17 +451,37 @@ export default function MachineryListingForm() {
             )}
             {images.length > 0 && (
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                When your email client opens, please attach these {images.length} photo{images.length > 1 ? "s" : ""} to the email before sending.
+                {mf.photoFollowUpNote}
               </p>
             )}
           </div>
 
+          <FieldGroup title={mf.sectionContact}>
+            <Field label={mf.contactEmail} required>
+              <Input
+                type="email"
+                placeholder={mf.contactEmailPlaceholder}
+                value={contactEmail}
+                onChange={e => setContactEmail(e.target.value)}
+                required
+              />
+            </Field>
+          </FieldGroup>
+
+          {error && (
+            <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
             <Link href="/machinery" className="flex-1">
-              <Button type="button" variant="outline" className="w-full">{mf.cancel}</Button>
+              <Button type="button" variant="outline" className="w-full" disabled={submitting}>{mf.cancel}</Button>
             </Link>
-            <Button type="submit" className="flex-1 font-semibold">
-              {mf.submitListing}
+            <Button type="submit" className="flex-1 font-semibold gap-2" disabled={submitting}>
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {submitting ? mf.submitting : mf.submitListing}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground text-center">

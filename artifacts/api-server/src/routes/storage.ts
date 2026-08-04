@@ -6,7 +6,7 @@ import { operatorsTable, pendingUploadsTable } from "@workspace/db/schema";
 import { eq, and, lt, sql } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
-import { requireAuth, requireRole } from "../middleware/requireAuth";
+import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
 
 const ALLOWED_CONTENT_TYPES = new Set([
   "application/pdf",
@@ -147,6 +147,9 @@ router.post(
   "/storage/blog-cover-upload",
   requireAuth,
   requireRole("admin"),
+  // Uploading blog imagery is a content mutation — same capability as the blog
+  // routes themselves, so a data_analyst or finance_admin cannot publish media.
+  requireAdminCapability("content"),
   express.raw({ type: "*/*", limit: "10mb" }),
   async (req: Request, res: Response) => {
     if (!Buffer.isBuffer(req.body) || req.body.length === 0) {

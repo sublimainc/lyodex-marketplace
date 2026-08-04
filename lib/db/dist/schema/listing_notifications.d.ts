@@ -127,10 +127,10 @@ export declare const listingNotificationsTable: import("drizzle-orm/pg-core").Pg
 }>;
 export declare const insertListingNotificationSchema: z.ZodObject<{
     user_id: z.ZodInt;
-    listing_type: z.ZodString;
-    listing_id: z.ZodInt;
     message: z.ZodString;
     read: z.ZodOptional<z.ZodBoolean>;
+    listing_type: z.ZodString;
+    listing_id: z.ZodInt;
 }, {
     out: {};
     in: {};

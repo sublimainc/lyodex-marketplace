@@ -2,10 +2,12 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { siteSettingsTable, SITE_SETTING_KEYS, type SiteSettingKey } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
-import { requireAuth, requireRole } from "../middleware/requireAuth";
+import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
-const adminOnly = [requireAuth, requireRole("admin")];
+// Blog and site settings are content surfaces: gated on the "content"
+// capability so a data_analyst or finance_admin cannot edit public copy.
+const adminOnly = [requireAuth, requireRole("admin"), requireAdminCapability("content")];
 
 async function getSettings(): Promise<Record<SiteSettingKey, boolean>> {
   const rows = await db.select().from(siteSettingsTable);

@@ -13,6 +13,13 @@ export type AuthTokenGetter = () => Promise<string | null> | string | null;
  */
 export declare function setBaseUrl(url: string | null): void;
 /**
+ * Current base URL, or `""` when requests are same-origin.
+ *
+ * Lets callers hand-roll a `fetch` against an endpoint that has no generated
+ * hook while still targeting the same server the generated client uses.
+ */
+export declare function getBaseUrl(): string;
+/**
  * Register a getter that supplies a bearer auth token.  Before every fetch
  * the getter is invoked; when it returns a non-null string, an
  * `Authorization: Bearer <token>` header is attached to the request.

@@ -11,23 +11,63 @@ import {
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
-export const objectStorageClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token",
+/**
+ * Object storage credentials.
+ *
+ * Off Replit, set `GOOGLE_APPLICATION_CREDENTIALS` (path to a service-account
+ * JSON key) or `GCS_SERVICE_ACCOUNT_KEY` (the JSON itself), plus
+ * `GCS_PROJECT_ID`. The Google SDK also picks up Application Default
+ * Credentials automatically on GCP.
+ *
+ * On Replit neither is set and we fall back to the local sidecar, which mints
+ * short-lived tokens for the workspace bucket.
+ */
+export const usingReplitSidecar =
+  !process.env.GOOGLE_APPLICATION_CREDENTIALS && !process.env.GCS_SERVICE_ACCOUNT_KEY;
+
+function buildStorageClient(): Storage {
+  if (process.env.GCS_SERVICE_ACCOUNT_KEY) {
+    let parsed: { client_email?: string; private_key?: string; project_id?: string };
+    try {
+      parsed = JSON.parse(process.env.GCS_SERVICE_ACCOUNT_KEY) as typeof parsed;
+    } catch {
+      throw new Error("GCS_SERVICE_ACCOUNT_KEY is set but is not valid JSON");
+    }
+    return new Storage({
+      projectId: process.env.GCS_PROJECT_ID ?? parsed.project_id,
+      credentials: {
+        client_email: parsed.client_email,
+        // Escaped newlines are common when the key is pasted into a secrets UI.
+        private_key: parsed.private_key?.replace(/\\n/g, "\n"),
       },
+    });
+  }
+
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    // The SDK reads the credentials file path from the environment itself.
+    return new Storage({ projectId: process.env.GCS_PROJECT_ID });
+  }
+
+  return new Storage({
+    credentials: {
+      audience: "replit",
+      subject_token_type: "access_token",
+      token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+      type: "external_account",
+      credential_source: {
+        url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+        format: {
+          type: "json",
+          subject_token_field_name: "access_token",
+        },
+      },
+      universe_domain: "googleapis.com",
     },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
+    projectId: "",
+  });
+}
+
+export const objectStorageClient = buildStorageClient();
 
 export class ObjectNotFoundError extends Error {
   constructor() {
@@ -267,6 +307,21 @@ async function signObjectURL({
   method: "GET" | "PUT" | "DELETE" | "HEAD";
   ttlSec: number;
 }): Promise<string> {
+  // Off Replit: sign with the Google SDK using the configured service account.
+  if (!usingReplitSidecar) {
+    const [signedUrl] = await objectStorageClient
+      .bucket(bucketName)
+      .file(objectName)
+      .getSignedUrl({
+        version: "v4",
+        // GCS v4 signing has no DELETE/HEAD verbs; both map onto the same
+        // resource operations as GET/PUT for our access patterns.
+        action: method === "PUT" ? "write" : method === "DELETE" ? "delete" : "read",
+        expires: Date.now() + ttlSec * 1000,
+      });
+    return signedUrl;
+  }
+
   const request = {
     bucket_name: bucketName,
     object_name: objectName,
@@ -286,8 +341,9 @@ async function signObjectURL({
   );
   if (!response.ok) {
     throw new Error(
-      `Failed to sign object URL, errorcode: ${response.status}, ` +
-        `make sure you're running on Replit`
+      `Failed to sign object URL (status ${response.status}). ` +
+        `On Replit this needs the object-storage sidecar; elsewhere set ` +
+        `GOOGLE_APPLICATION_CREDENTIALS or GCS_SERVICE_ACCOUNT_KEY.`
     );
   }
 

@@ -1,8 +1,7 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const isBuild = process.env.NODE_ENV === "production" || process.argv.includes("build");
 
@@ -22,25 +21,30 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
 
 const basePath = process.env.BASE_PATH ?? "/";
 
+// Replit-only developer tooling. Loaded dynamically and tolerated when absent,
+// so the @replit/* packages can be uninstalled entirely when hosting elsewhere
+// without breaking the build.
+const replitDevPlugins: PluginOption[] = [];
+if (process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined) {
+  for (const [specifier, load] of [
+    ["@replit/vite-plugin-runtime-error-modal", (m: any) => m.default()],
+    ["@replit/vite-plugin-cartographer", (m: any) => m.cartographer({ root: path.resolve(import.meta.dirname, "..") })],
+    ["@replit/vite-plugin-dev-banner", (m: any) => m.devBanner()],
+  ] as const) {
+    try {
+      replitDevPlugins.push(load(await import(/* @vite-ignore */ specifier)));
+    } catch {
+      // Package not installed — expected off Replit.
+    }
+  }
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, ".."),
-            }),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
+    ...replitDevPlugins,
   ],
   resolve: {
     alias: {

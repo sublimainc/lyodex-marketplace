@@ -20,6 +20,7 @@ import { eq, count } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middleware/requireAuth";
 import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
+import { getPublicBaseUrl } from "../lib/publicUrl";
 
 const router = Router();
 
@@ -27,8 +28,7 @@ const router = Router();
 
 /** Return the base URL for Stripe redirect callbacks. */
 function getBaseUrl(): string {
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  return domain ? `https://${domain}` : "http://localhost:3000";
+  return getPublicBaseUrl();
 }
 
 /**

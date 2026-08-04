@@ -265,9 +265,9 @@ export declare const usersTable: import("drizzle-orm/pg-core").PgTableWithColumn
 }>;
 export declare const insertUserSchema: z.ZodObject<{
     name: z.ZodString;
+    role: z.ZodOptional<z.ZodString>;
     email: z.ZodString;
     password_hash: z.ZodString;
-    role: z.ZodOptional<z.ZodString>;
     admin_role: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     banned: z.ZodOptional<z.ZodBoolean>;
     failed_login_count: z.ZodOptional<z.ZodInt>;

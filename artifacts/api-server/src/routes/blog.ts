@@ -2,7 +2,7 @@ import express, { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { blogPostsTable, siteSettingsTable, adminAuditLogsTable } from "@workspace/db/schema";
 import { eq, desc, lte, and } from "drizzle-orm";
-import { requireAuth, requireRole } from "../middleware/requireAuth";
+import { requireAuth, requireRole, requireAdminCapability } from "../middleware/requireAuth";
 import { logger } from "../lib/logger";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { z } from "zod/v4";
@@ -47,7 +47,9 @@ async function isBlogLocked(): Promise<boolean> {
 }
 
 const router: IRouter = Router();
-const adminOnly = [requireAuth, requireRole("admin")];
+// Blog and site settings are content surfaces: gated on the "content"
+// capability so a data_analyst or finance_admin cannot edit public copy.
+const adminOnly = [requireAuth, requireRole("admin"), requireAdminCapability("content")];
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
