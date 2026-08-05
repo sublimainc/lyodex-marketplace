@@ -24,6 +24,7 @@
 
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { loadRegistry } from "./fd-registry.mjs";
 
 const [CACHE, OUT] = process.argv.slice(2);
 if (!CACHE || !OUT) throw new Error("usage: node fd-build-dataset.mjs <cache-dir> <output-dir>");
@@ -45,6 +46,7 @@ const TO_CAD = {
   SEK: 0.13,
   DKK: 0.20,
   CHF: 1.60,
+  MXN: 0.075,
 };
 
 // ── Weight parsing ──────────────────────────────────────────────────────────
@@ -105,7 +107,7 @@ const NET_WEIGHT_RE = /(?:net\s*(?:wt\.?|weight)|poids\s*net|nettogewicht|peso\s
  * Serving counts are deliberately not matched — a "12 servings" bulk can is one
  * can, not twelve.
  */
-const PACK_COUNT_RE = /(?:^|\b)(?:case\s+of\s+)?(\d{1,3})\s*[-\s]?(?:packages?|packs?|cans?|pouches?|bags?|boxes|jars?|tubs?|tins?|buckets?|units?)\b/i;
+const PACK_COUNT_RE = /(?:^|\b)(?:case\s+of\s+|caja\s+de\s+)?(\d{1,3})\s*[-\s]?(?:packages?|packs?|cans?|pouches?|bags?|boxes|jars?|tubs?|tins?|buckets?|units?|pzas?|piezas?|unidades?|sobres?|bolsas?|sachets?|unit[ée]s?)\b/i;
 
 function packMultiplier(variantTitle) {
   if (!variantTitle || variantTitle === "Default Title") return 1;
@@ -115,54 +117,79 @@ function packMultiplier(variantTitle) {
   return n > 1 && n <= 200 ? n : 1;
 }
 
+/**
+ * A variant naming a pack without a number — "case", "bulk", "carton". The size
+ * printed elsewhere then belongs to one unit, and the pack holds an unknown
+ * number of them. Safecastle sells broccoli florets this way: the title gives
+ * 136 g, the variant says "case", and the pair read naively price it at
+ * $1,813/kg.
+ */
+const UNCOUNTED_PACK_RE = /^(?:case|caja|bulk|wholesale|carton)\b/i;
+
 function resolveWeight(product, variant) {
   const body = product.body_html ?? "";
-  // Applies only to weights that describe a single unit. A weight read from the
-  // variant title already refers to that variant.
-  const mult = packMultiplier(variant.title);
-  const scaled = (g, source, confidence) => ({
-    grams: Math.round(g * mult),
-    source: mult > 1 ? `${source}_x${mult}` : source,
-    confidence,
-  });
+  const vTitle = variant.title && variant.title !== "Default Title" ? variant.title : "";
 
+  const variantMult = packMultiplier(vTitle);
+  const titleMult = packMultiplier(product.title);
+
+  // Nothing can be salvaged when the pack size is unstated: every weight on the
+  // page describes one unit, and we do not know how many the box holds.
+  if (UNCOUNTED_PACK_RE.test(vTitle) && variantMult === 1) {
+    return { grams: null, source: "pack_size_unstated", confidence: "none" };
+  }
+
+  // 1. The seller's own net-weight declaration. It describes a single unit, so a
+  //    pack count from *either* the variant or the product name applies.
+  //    "Crumbled Blue Cheese 12 Cans Per Case" states the count in the title
+  //    while the variant is empty; reading only the 283 g of one can priced it
+  //    at $1,791/kg.
   const netDecl = body.match(NET_WEIGHT_RE);
   if (netDecl) {
     const g = parseWeightGrams(netDecl[1]);
-    if (g) return scaled(g, "net_weight_declared", "high");
-  }
-
-  if (variant.title && variant.title !== "Default Title") {
-    const g = parseWeightGrams(variant.title);
     if (g) {
-      // A variant title can carry both a unit size and a pack count, in either
-      // order — "12 PACK | Sample size 1 oz", "2 OZ (15 bags)". Only multiply
-      // when the parsed size looks like one unit; above half a kilo the number
-      // in the title is more likely the pack total already, and multiplying it
-      // would understate the price per kilo instead of overstating it.
-      const useMult = mult > 1 && g <= 500 ? mult : 1;
+      const m = Math.max(variantMult, titleMult);
       return {
-        grams: Math.round(g * useMult),
-        source: useMult > 1 ? `variant_title_x${useMult}` : "variant_title",
-        confidence: useMult > 1 ? "medium" : "high",
+        grams: Math.round(g * m),
+        source: m > 1 ? `net_weight_declared_x${m}` : "net_weight_declared",
+        // A multiplied figure rests on our reading of the pack count rather than
+        // on anything the seller stated outright, so it drops a tier.
+        confidence: m > 1 ? "medium" : "high",
       };
     }
   }
 
+  // 2. Size in the variant the shopper picks. It already describes that variant,
+  //    unless the same string also names a count ("12 PACK | 1 oz").
+  if (vTitle) {
+    const g = parseWeightGrams(vTitle);
+    if (g) {
+      const m = variantMult > 1 && g <= 500 ? variantMult : 1;
+      return {
+        grams: Math.round(g * m),
+        source: m > 1 ? `variant_title_x${m}` : "variant_title",
+        confidence: m > 1 ? "medium" : "high",
+      };
+    }
+  }
+
+  // 3. Size in the product name.
   const g1 = parseWeightGrams(product.title);
   if (g1) {
-    // The pack count can live in the product title rather than the variant —
-    // "Custom Party Pack (15 bags x 2 oz)" has no variant at all, and reading
-    // only the 2 oz priced it at $1,493/kg instead of $73/kg. Same half-kilo
-    // guard as above: past that the number is likely the pack total already.
-    const titleMult = packMultiplier(product.title);
-    const useMult = Math.max(mult, titleMult) > 1 && g1 <= 500 ? Math.max(mult, titleMult) : 1;
+    // A variant that names a count ("22 cans") settles it: the title size is per
+    // unit whatever its magnitude. A count inside the title itself is ambiguous —
+    // "12 pack 1.2 kg" may already be the total — so the half-kilo guard applies
+    // to that case only.
+    let m = 1;
+    if (variantMult > 1) m = variantMult;
+    else if (titleMult > 1 && g1 <= 500) m = titleMult;
     return {
-      grams: Math.round(g1 * useMult),
-      source: useMult > 1 ? `product_title_x${useMult}` : "product_title",
-      confidence: useMult > 1 ? "medium" : "high",
+      grams: Math.round(g1 * m),
+      source: m > 1 ? `product_title_x${m}` : "product_title",
+      confidence: m > 1 ? "medium" : "high",
     };
   }
+
 
   // Deliberately NOT falling back to "first weight-looking number in the
   // description". That was tried and it read nutrition panels as net weights —
@@ -205,6 +232,19 @@ const CATEGORIES = [
  * being filed under yogurt, which would have made the yogurt figures describe
  * fruit.
  */
+/**
+ * Product URL differs by platform: Shopify serves /products/<handle>, WordPress
+ * serves /product/<slug>, and Squarespace serves <the shop path the owner
+ * chose>/<urlId>. Emitting the Shopify shape everywhere produced links that all
+ * 404, which would make those rows unverifiable — and a benchmark nobody can
+ * check is worth very little.
+ */
+function productUrl(store, platform, handle, shopPath) {
+  if (platform === "woocommerce") return `https://${store.domain}/product/${handle}`;
+  if (platform === "squarespace") return `https://${store.domain}/${shopPath ?? "shop"}/${handle}`;
+  return `https://${store.domain}/products/${handle}`;
+}
+
 function categorise(title, fallback) {
   for (const [name, re] of CATEGORIES) if (re.test(title)) return name;
   for (const [name, re] of CATEGORIES) if (re.test(fallback)) return name;
@@ -216,8 +256,35 @@ const FD_WORDS = /freeze[\s-]?dried|freeze[\s-]?dry|freezedried|lyophilis|lyophi
 // Things these shops sell that are not food, or not sold by weight.
 const NON_FOOD = /gift\s?card|sticker|t-?shirt|hoodie|mug|tote|apparel|hat\b|sac\s|bag\b|quilt|strap|sangle|stove|r[ée]chaud|spork|utensil|bowl\s?set|cookware|subscription|donation|shipping\s?protection|sample\s?pack\s?card|e-?gift/i;
 
+/**
+ * Commodity ingredients that are food but are not freeze-dried.
+ *
+ * Several B2B sellers list liofilizados beside ordinary bulk stock — Gredi
+ * Mexico sells corn starch, citric acid, maltodextrin and dextrose in 25 kg
+ * sacks. Because that seller's whole catalogue was treated as freeze-dried,
+ * corn starch at $1.53/kg entered the benchmark and became its cheapest
+ * "freeze-dried" product. These are genuine prices for genuine goods; they are
+ * simply answering a different question than the one this dataset asks.
+ */
+const NON_FD_COMMODITY = /f[ée]cula|almid[óo]n|starch\b|[áa]cido\s|citric\s?acid|maltodextrin|dextrosa|dextrose|glucosa|sacarosa|goma\s(?:xantana|guar)|xanthan|guar\s?gum|lecitina|lecithin|carbonato|bicarbonato|sorbato|benzoato|conservador|colorante|saborizante|gelatina\s?sin|agar\b|pectina|pectin\b|carrag|estabilizante|emulsificante|antiaglomerante|nitr[ai]to/i;
+
 // ── Build ───────────────────────────────────────────────────────────────────
 await mkdir(OUT, { recursive: true });
+
+/**
+ * Classification rules live in the registry, not in the cache. Re-reading them
+ * here means a rule can be corrected — as it was when a B2B ingredient house
+ * turned out to sell corn starch beside its liofilizados — without re-crawling
+ * anything, which matters because a full crawl takes the better part of an hour
+ * and hammers other people's servers.
+ */
+let registryFlags = new Map();
+try {
+  const reg = await loadRegistry(join(CACHE, "..", "vendors-registry.csv"));
+  registryFlags = new Map(reg.filter(v => v.domain).map(v => [v.domain, v]));
+} catch {
+  console.log("No vendor registry found — using the flags stored in each cache file\n");
+}
 
 const files = (await readdir(CACHE)).filter(f => f.endsWith(".json"));
 const rows = [];
@@ -225,12 +292,24 @@ const storeReport = [];
 
 for (const file of files) {
   const cached = JSON.parse(await readFile(join(CACHE, file), "utf8"));
-  const { store, status, currency, fetched_at, products = [] } = cached;
+  const { status, currency, fetched_at, products = [] } = cached;
+  // Registry wins where it knows the vendor; the cached copy is the fallback.
+  const store = { ...cached.store, ...(registryFlags.get(cached.store?.domain) ?? {}) };
+  if (status === "marketplace_reseller") {
+    storeReport.push({
+      vendor: store.name, domain: store.domain, country: store.country,
+      fetch_status: "excluded_marketplace", currency: null, rows: 0, rows_with_price_per_kg: 0,
+    });
+    continue;
+  }
 
   let kept = 0;
   for (const p of products) {
     const haystack = `${p.title} ${p.product_type ?? ""} ${(p.tags ?? []).join(" ")}`;
     if (NON_FOOD.test(haystack)) continue;
+    // Applies whatever the store is: a bulk ingredient stays a bulk ingredient
+    // even in a catalogue that is otherwise entirely freeze-dried.
+    if (NON_FD_COMMODITY.test(p.title)) continue;
 
     const isFd = store.wholeStoreFd || FD_WORDS.test(`${haystack} ${(p.body_html ?? "").slice(0, 300)}`);
     if (!isFd) continue;
@@ -262,10 +341,15 @@ for (const file of files) {
       rows.push({
         vendor: store.name,
         vendor_country: store.country,
+        // Present only on catalogues crawled from the vendor registry, which
+        // records the province or state and how the seller operates.
+        vendor_region: store.zone && store.zone !== store.country ? store.zone : "",
+        vendor_type: store.vendorType ?? "",
         vendor_domain: store.domain,
         product_name: p.title,
         variant: v.title === "Default Title" ? "" : (v.title ?? ""),
         category: categorise(p.title, haystack),
+        product_type: p.product_type ?? "",
         net_weight_g: w.grams ?? "",
         weight_source: w.source,
         weight_confidence: w.confidence,
@@ -273,8 +357,10 @@ for (const file of files) {
         currency: currency ?? "",
         price_per_kg: perKg !== null ? perKg.toFixed(2) : "",
         price_per_kg_cad: perKg !== null && fx ? (perKg * fx).toFixed(2) : "",
+        fx_rate_to_cad: fx ?? "",
+        fx_date: FX_DATE,
         in_stock: v.available === true ? "yes" : "no",
-        source_url: `https://${store.domain}/products/${p.handle}`,
+        source_url: productUrl(store, cached.platform, p.handle, cached.shopPath),
         observed_at: (fetched_at ?? "").slice(0, 10),
         note: dropped ?? "",
       });
@@ -363,10 +449,12 @@ for (const r of rows) r.collection_method ??= "catalog_feed";
 
 // ── Outputs ─────────────────────────────────────────────────────────────────
 const HEADERS = [
-  "vendor", "vendor_country", "vendor_domain", "product_name", "variant", "category",
-  "net_weight_g", "weight_source", "weight_confidence", "price", "currency",
-  "price_per_kg", "price_per_kg_cad", "in_stock", "collection_method",
-  "source_url", "observed_at", "note",
+  "vendor", "vendor_country", "vendor_region", "vendor_type", "vendor_domain",
+  "product_name", "variant", "category", "product_type",
+  "net_weight_g", "weight_source", "weight_confidence",
+  "price", "currency", "price_per_kg", "price_per_kg_cad",
+  "fx_rate_to_cad", "fx_date",
+  "in_stock", "collection_method", "source_url", "observed_at", "note",
 ];
 
 // Excel on Windows assumes the system codepage unless a UTF-8 byte-order mark

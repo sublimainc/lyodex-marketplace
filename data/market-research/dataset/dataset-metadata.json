@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-08-05T11:46:47.485Z",
+  "built_at": "2026-08-05T12:48:05.475Z",
   "fx_date": "2026-08-05",
   "fx_rates_to_cad": {
     "CAD": 1,
@@ -12,7 +12,8 @@
     "PLN": 0.35,
     "SEK": 0.13,
     "DKK": 0.2,
-    "CHF": 1.6
+    "CHF": 1.6,
+    "MXN": 0.075
   },
   "method": "Prices and net weights read from each merchant's own public product catalogue. Net weight is taken from the merchant's declared net weight, variant name, product name, or description, in that order. Shopify's shipping-weight field is used only as a last resort and only when the implied price falls between 20 and 600 CAD/kg, because many merchants leave that field at a placeholder value. Rows with no establishable weight keep their price and have an empty price_per_kg. Summary figures exclude low-confidence weights.",
   "stores": [
@@ -32,11 +33,20 @@
       "fetch_status": "ok",
       "currency": "USD",
       "rows": 670,
-      "rows_with_price_per_kg": 560
+      "rows_with_price_per_kg": 475
     },
     {
       "vendor": "Augason Farms",
       "domain": "augasonfarms.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 11,
+      "rows_with_price_per_kg": 10
+    },
+    {
+      "vendor": "Backcountry Bistro",
+      "domain": "backcountrybistro.com",
       "country": "US",
       "fetch_status": "ok",
       "currency": "USD",
@@ -53,13 +63,31 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "Backpacker's Pantry Canada",
+      "domain": "backpackerspantry.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 52,
+      "rows_with_price_per_kg": 52
+    },
+    {
       "vendor": "Backpacker's Pantry",
       "domain": "backpackerspantry.com",
       "country": "US",
       "fetch_status": "ok",
       "currency": "USD",
-      "rows": 14,
-      "rows_with_price_per_kg": 14
+      "rows": 53,
+      "rows_with_price_per_kg": 53
+    },
+    {
+      "vendor": "Big Lake Candy Company",
+      "domain": "biglakecandy.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
     },
     {
       "vendor": "Bingco",
@@ -80,6 +108,15 @@
       "rows_with_price_per_kg": 1
     },
     {
+      "vendor": "Briden Solutions",
+      "domain": "bridensolutions.ca",
+      "country": "CA",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "Campers Pantry",
       "domain": "camperspantry.com.au",
       "country": "AU",
@@ -87,6 +124,51 @@
       "currency": "AUD",
       "rows": 18,
       "rows_with_price_per_kg": 13
+    },
+    {
+      "vendor": "Canadian Tire",
+      "domain": "canadiantire.ca",
+      "country": "CA",
+      "fetch_status": "excluded_marketplace",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Candeeze",
+      "domain": "candeeze.co",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Candy Frost",
+      "domain": "candyfrost.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 23,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Chewy",
+      "domain": "chewy.com",
+      "country": "US",
+      "fetch_status": "excluded_marketplace",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Chill Bites",
+      "domain": "chillbitesfood.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 54,
+      "rows_with_price_per_kg": 53
     },
     {
       "vendor": "Cook'n'Run",
@@ -107,13 +189,40 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "Cut N' Dry",
+      "domain": "cutndry.ca",
+      "country": "CA",
+      "fetch_status": "empty",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "LIOZ Dulces Liofilizados",
+      "domain": "dulcesliofilizados.com",
+      "country": "MX",
+      "fetch_status": "ok",
+      "currency": "MXN",
+      "rows": 18,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "Expedition Foods",
       "domain": "expeditionfoods.com",
       "country": "GB",
       "fetch_status": "ok",
       "currency": "GBP",
       "rows": 553,
-      "rows_with_price_per_kg": 542
+      "rows_with_price_per_kg": 426
+    },
+    {
+      "vendor": "Farm to Summit",
+      "domain": "farmtosummit.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 24,
+      "rows_with_price_per_kg": 18
     },
     {
       "vendor": "Firepot",
@@ -123,6 +232,33 @@
       "currency": null,
       "rows": 0,
       "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Flat Out Feasts",
+      "domain": "flatoutfeasts.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 7,
+      "rows_with_price_per_kg": 7
+    },
+    {
+      "vendor": "Forever Foods",
+      "domain": "foreverfoods.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 13,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "FOUNDATION Outdoors",
+      "domain": "foundation-outdoors.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 45,
+      "rows_with_price_per_kg": 39
     },
     {
       "vendor": "Freezedried & Co",
@@ -152,6 +288,15 @@
       "rows_with_price_per_kg": 28
     },
     {
+      "vendor": "Freeze Dried Food Store USA",
+      "domain": "freezedriedfoodstore.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 16,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "Freeze Dry Industries",
       "domain": "freezedryindustries.com.au",
       "country": "AU",
@@ -173,10 +318,46 @@
       "vendor": "Freeze N Dried",
       "domain": "freezendried.com",
       "country": "US",
-      "fetch_status": "no_feed",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 118,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Freezy Bites",
+      "domain": "freezybites.com.mx",
+      "country": "MX",
+      "fetch_status": "unsupported_platform",
       "currency": null,
       "rows": 0,
       "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Fresh Is Best",
+      "domain": "freshisbest.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 78,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Frixio",
+      "domain": "frixio.com.mx",
+      "country": "MX",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Collations Frosty Snack",
+      "domain": "frostysnack.com",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 102,
+      "rows_with_price_per_kg": 101
     },
     {
       "vendor": "Good To-Go",
@@ -188,13 +369,22 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "Gredi Mexico",
+      "domain": "gredi.com.mx",
+      "country": "MX",
+      "fetch_status": "ok",
+      "currency": "MXN",
+      "rows": 55,
+      "rows_with_price_per_kg": 49
+    },
+    {
       "vendor": "Happy Yak",
       "domain": "happyyak.ca",
       "country": "CA",
       "fetch_status": "ok",
       "currency": "CAD",
       "rows": 74,
-      "rows_with_price_per_kg": 74
+      "rows_with_price_per_kg": 70
     },
     {
       "vendor": "Harmony House Foods",
@@ -215,6 +405,96 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "Just Freeze It Sweets",
+      "domain": "justfreezeitsweets.ca",
+      "country": "CA",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "AlpineAire Foods",
+      "domain": "katadyngroup.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "KMP Provisions",
+      "domain": "kmpprovisions.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Like 'N Candy",
+      "domain": "likencandy.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Procesadora de Alimentos CA",
+      "domain": "liofilizacion.com.mx",
+      "country": "MX",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "LioMex",
+      "domain": "liofilizacionmexicana.com",
+      "country": "MX",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "LioMart",
+      "domain": "liomart.mx",
+      "country": "MX",
+      "fetch_status": "ok",
+      "currency": "MXN",
+      "rows": 10,
+      "rows_with_price_per_kg": 4
+    },
+    {
+      "vendor": "MercadoLibre Mexico",
+      "domain": "listado.mercadolibre.com.mx",
+      "country": "MX",
+      "fetch_status": "excluded_marketplace",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Lolli Lane Sugar & Co",
+      "domain": "lollilane.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": null,
+      "rows": 23,
+      "rows_with_price_per_kg": 9
+    },
+    {
+      "vendor": "Gun Kan",
+      "domain": "loxpc.com.mx",
+      "country": "MX",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "LYO Alimentation",
       "domain": "lyo-alimentation.ca",
       "country": "CA",
@@ -222,6 +502,15 @@
       "currency": null,
       "rows": 0,
       "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Lyoca",
+      "domain": "lyoca.com",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 8,
+      "rows_with_price_per_kg": 6
     },
     {
       "vendor": "Lyo & Co",
@@ -305,10 +594,64 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "MumNums",
+      "domain": "mumnums.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 65,
+      "rows_with_price_per_kg": 2
+    },
+    {
+      "vendor": "Nature's Turn",
+      "domain": "naturesturn.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 81,
+      "rows_with_price_per_kg": 81
+    },
+    {
+      "vendor": "Next Mile Meals",
+      "domain": "nextmilemeals.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 11,
+      "rows_with_price_per_kg": 11
+    },
+    {
+      "vendor": "Nomada Alimentos",
+      "domain": "nomadaalimentos.com.mx",
+      "country": "MX",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "North Bay Trading",
       "domain": "northbaytrading.com",
       "country": "US",
       "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Northern Lights Candy",
+      "domain": "northernlightscandy.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 22,
+      "rows_with_price_per_kg": 5
+    },
+    {
+      "vendor": "NUTRIAM",
+      "domain": "nutriam.mx",
+      "country": "MX",
+      "fetch_status": "unsupported_platform",
       "currency": null,
       "rows": 0,
       "rows_with_price_per_kg": 0
@@ -341,6 +684,15 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "Outdoor Pantry",
+      "domain": "outdoorpantry.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 26,
+      "rows_with_price_per_kg": 26
+    },
+    {
       "vendor": "Packit Gourmet",
       "domain": "packitgourmet.com",
       "country": "US",
@@ -359,6 +711,60 @@
       "rows_with_price_per_kg": 20
     },
     {
+      "vendor": "Petco",
+      "domain": "petco.com",
+      "country": "US",
+      "fetch_status": "excluded_marketplace",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Pinnacle Foods Co",
+      "domain": "pinnaclefoods.co",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 19,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Polar Bear Bites",
+      "domain": "polarbearbites.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Polar Pieces",
+      "domain": "polarpieces.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Prairie Rose Pantry",
+      "domain": "prairierosepantry.ca",
+      "country": "CA",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Pure Bliss",
+      "domain": "pure-bliss.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 33,
+      "rows_with_price_per_kg": 16
+    },
+    {
       "vendor": "Radix Nutrition",
       "domain": "radixnutrition.com",
       "country": "NZ",
@@ -373,8 +779,8 @@
       "country": "US",
       "fetch_status": "ok",
       "currency": "USD",
-      "rows": 72,
-      "rows_with_price_per_kg": 35
+      "rows": 331,
+      "rows_with_price_per_kg": 111
     },
     {
       "vendor": "Real Turmat",
@@ -386,6 +792,24 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "REI Co-op",
+      "domain": "rei.com",
+      "country": "US",
+      "fetch_status": "excluded_marketplace",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "RGV Freeze Dried Treats",
+      "domain": "rgvfreezedried.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": null,
+      "rows": 50,
+      "rows_with_price_per_kg": 14
+    },
+    {
       "vendor": "Rocket Krunch",
       "domain": "rocketkrunch.com",
       "country": "US",
@@ -393,6 +817,24 @@
       "currency": "USD",
       "rows": 20,
       "rows_with_price_per_kg": 20
+    },
+    {
+      "vendor": "Sadie's All Natural",
+      "domain": "sadiesallnatural.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Safecastle",
+      "domain": "safecastle.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 253,
+      "rows_with_price_per_kg": 103
     },
     {
       "vendor": "Shelf 2 Table",
@@ -404,11 +846,29 @@
       "rows_with_price_per_kg": 30
     },
     {
+      "vendor": "Space City Candy",
+      "domain": "spacecitycandy.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "Spry Active",
       "domain": "spryactive.ca",
       "country": "CA",
       "fetch_status": "ok",
       "currency": "CAD",
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "70 Below Treats",
+      "domain": "store.70below.ca",
+      "country": "CA",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
       "rows": 0,
       "rows_with_price_per_kg": 0
     },
@@ -425,9 +885,9 @@
       "vendor": "Sublima",
       "domain": "sublima.co",
       "country": "CA",
-      "fetch_status": "no_feed",
-      "currency": null,
-      "rows": 0,
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 9,
       "rows_with_price_per_kg": 0
     },
     {
@@ -449,6 +909,24 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "Sweet AZ Candy",
+      "domain": "sweetazcandy.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Sweet Dees",
+      "domain": "sweetdees.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 196,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "SweetyTreatyCo",
       "domain": "sweetytreatyco.com",
       "country": "US",
@@ -463,6 +941,24 @@
       "country": "EE",
       "fetch_status": "no_feed",
       "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Texas Farmers Kitchen",
+      "domain": "texasfarmerskitchen.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 87,
+      "rows_with_price_per_kg": 4
+    },
+    {
+      "vendor": "The Candy Galaxy",
+      "domain": "thecandygalaxy.com",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
       "rows": 0,
       "rows_with_price_per_kg": 0
     },
@@ -485,12 +981,48 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "The Manic Maker",
+      "domain": "themanicmaker.ca",
+      "country": "CA",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
       "vendor": "Thrive Life",
       "domain": "thrivelife.com",
       "country": "US",
       "fetch_status": "no_feed",
       "currency": null,
       "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Fruvethy",
+      "domain": "tiendafruvethy.com",
+      "country": "MX",
+      "fetch_status": "ok",
+      "currency": "MXN",
+      "rows": 245,
+      "rows_with_price_per_kg": 200
+    },
+    {
+      "vendor": "Trailtopia",
+      "domain": "trailtopia.com",
+      "country": "US",
+      "fetch_status": "unsupported_platform",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Treatly Freeze Dried Food",
+      "domain": "treatlyfreezedriedfood.com",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 45,
       "rows_with_price_per_kg": 0
     },
     {
@@ -503,6 +1035,15 @@
       "rows_with_price_per_kg": 0
     },
     {
+      "vendor": "UpTop Treats",
+      "domain": "uptoptreats.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 39,
+      "rows_with_price_per_kg": 38
+    },
+    {
       "vendor": "Valley Food Storage",
       "domain": "valleyfoodstorage.com",
       "country": "US",
@@ -510,6 +1051,60 @@
       "currency": "USD",
       "rows": 88,
       "rows_with_price_per_kg": 82
+    },
+    {
+      "vendor": "Walmart Canada",
+      "domain": "walmart.ca",
+      "country": "CA",
+      "fetch_status": "excluded_marketplace",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Walmart US",
+      "domain": "walmart.com",
+      "country": "US",
+      "fetch_status": "excluded_marketplace",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Wellioo",
+      "domain": "wellioo.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Willow & Fern Co Freeze Dried",
+      "domain": "willowferncofreezedried.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 60,
+      "rows_with_price_per_kg": 32
+    },
+    {
+      "vendor": "Windwick Farm",
+      "domain": "windwickfarm.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 143,
+      "rows_with_price_per_kg": 63
+    },
+    {
+      "vendor": "Wise By Nature",
+      "domain": "wisebynature.com",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 34,
+      "rows_with_price_per_kg": 32
     },
     {
       "vendor": "Yum Yum Candy Shop",
@@ -540,10 +1135,10 @@
     }
   ],
   "totals": {
-    "stores_surveyed": 58,
-    "stores_with_data": 32,
-    "product_rows": 3067,
-    "rows_with_price_per_kg": 2632,
-    "rows_in_summary": 507
+    "stores_surveyed": 124,
+    "stores_with_data": 67,
+    "product_rows": 5440,
+    "rows_with_price_per_kg": 3517,
+    "rows_in_summary": 926
   }
 }
