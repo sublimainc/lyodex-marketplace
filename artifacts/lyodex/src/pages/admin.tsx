@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { TrafficTab, ObservationsTab, NewsletterTab } from "./admin-tabs";
+import { BenchmarksTab } from "./admin-benchmarks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,7 @@ import {
   Globe, BookOpen, LayoutList, Plus, Trash2, Pencil, CheckCircle2, XOctagon, Upload, Loader2,
   MapPin, Building2, X, ChevronDown, ChevronUp, Package,
   FileDown, Calendar, TrendingUp, RefreshCw, Save,
-  Eye, NotebookPen, Mail,
+  Eye, NotebookPen, Mail, Tags,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import {
@@ -5526,7 +5527,7 @@ function ReportsTab() {
   );
 }
 
-type Tab = "overview" | "traffic" | "observations" | "newsletter" | "users" | "operators" | "requests" | "transactions" | "insights" | "messages" | "disputes" | "audit" | "price-data" | "site-controls" | "blog" | "listings" | "machinery" | "listings-approval" | "manufacturers" | "map" | "reports";
+type Tab = "overview" | "traffic" | "benchmarks" | "observations" | "newsletter" | "users" | "operators" | "requests" | "transactions" | "insights" | "messages" | "disputes" | "audit" | "price-data" | "site-controls" | "blog" | "listings" | "machinery" | "listings-approval" | "manufacturers" | "map" | "reports";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Overview", icon: Activity },
@@ -5544,6 +5545,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "reports", label: "Reports", icon: FileDown },
   { id: "price-data", label: "Price Data", icon: Database },
   { id: "observations", label: "Observations", icon: NotebookPen },
+  { id: "benchmarks", label: "Prix produits", icon: Tags },
   { id: "messages", label: "Messages", icon: MessageSquare },
   { id: "disputes", label: "Disputes", icon: Scale },
   { id: "audit", label: "Audit Log", icon: ClipboardList },
@@ -5651,6 +5653,7 @@ export default function AdminPanel() {
           {tab === "overview" && <OverviewTab overview={overview} loading={overviewLoading} />}
           {tab === "traffic" && <TrafficTab />}
           {tab === "observations" && <ObservationsTab />}
+          {tab === "benchmarks" && <BenchmarksTab />}
           {tab === "newsletter" && <NewsletterTab />}
           {tab === "users" && <UsersTab />}
           {tab === "operators" && <OperatorsTab />}
