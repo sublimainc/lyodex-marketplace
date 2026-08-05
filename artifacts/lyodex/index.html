@@ -15,18 +15,86 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="LyoDex — Freeze-Drying Marketplace" />
     <meta name="twitter:description" content="B2B marketplace for freeze-drying services. Find operators, source freeze-dried ingredients, and discover industrial freeze-dryer manufacturers." />
+    <!--
+      Entity definition.
+
+      The important word below is "Organization", not "Manufacturer" or
+      "FoodEstablishment". LyoDex operates no freeze-dryer and processes no
+      material; it lists the companies that do. Describing it as a processor
+      would rank it for neither role — an engine that catches an entity claiming
+      to be something it is not stops treating it as a source for either.
+
+      What LyoDex can legitimately claim, and what no competitor publishes, is
+      the price data: observed rates per kilogram, sourced and dated. That is
+      stated as a Dataset so it can be cited as one.
+    -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "LyoDex",
-      "url": "https://lyodex.com",
-      "description": "B2B marketplace connecting buyers with freeze-drying operators in Canada, USA, and Europe.",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://lyodex.com/operators?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://lyodex.com/#organization",
+          "name": "LyoDex",
+          "url": "https://lyodex.com",
+          "description": "Marketplace and directory connecting businesses that need freeze-drying with the operators who provide it, across Canada, the United States and Europe. LyoDex does not operate freeze-drying equipment.",
+          "knowsAbout": [
+            "Freeze-drying",
+            "Lyophilisation",
+            "Contract freeze-drying",
+            "Food processing",
+            "Freeze-dried ingredients",
+            "Industrial freeze-dryers"
+          ],
+          "areaServed": [
+            { "@type": "Country", "name": "Canada" },
+            { "@type": "Country", "name": "United States" },
+            { "@type": "Place", "name": "Europe" }
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://lyodex.com/#website",
+          "name": "LyoDex",
+          "url": "https://lyodex.com",
+          "publisher": { "@id": "https://lyodex.com/#organization" },
+          "inLanguage": ["en", "fr", "es"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://lyodex.com/operators?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://lyodex.com/#price-benchmark",
+          "name": "Freeze-dried product price benchmark",
+          "description": "Retail prices per kilogram for finished freeze-dried products, read from the public catalogues of merchants across North America, Europe and Oceania. Each observation records its source URL and date. Prices without a published net weight are recorded without a price per kilogram rather than estimated.",
+          "url": "https://lyodex.com/market-intelligence",
+          "creator": { "@id": "https://lyodex.com/#organization" },
+          "isAccessibleForFree": true,
+          "measurementTechnique": "Direct observation of merchants' published catalogues",
+          "variableMeasured": [
+            { "@type": "PropertyValue", "name": "Price per kilogram", "unitCode": "KGM" },
+            { "@type": "PropertyValue", "name": "Net weight", "unitCode": "GRM" }
+          ]
+        },
+        {
+          "@type": "Service",
+          "@id": "https://lyodex.com/#rfq",
+          "name": "Freeze-drying request for quote",
+          "serviceType": "Contract freeze-drying sourcing",
+          "provider": { "@id": "https://lyodex.com/#organization" },
+          "description": "Post a freeze-drying requirement and receive quotes from listed operators. LyoDex connects the parties; the drying is performed by the independent operator.",
+          "areaServed": [
+            { "@type": "Country", "name": "Canada" },
+            { "@type": "Country", "name": "United States" }
+          ]
+        }
+      ]
     }
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

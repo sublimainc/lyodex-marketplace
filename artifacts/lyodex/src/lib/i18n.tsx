@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useMemo, useEffect, ReactNode } from "react";
 import { Locale, translations, Translations } from "./translations";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -48,6 +48,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     () => substituteFee(translations[locale], feeLabel),
     [locale, feeLabel],
   );
+
+  /**
+   * Keep <html lang> in step with the chosen language.
+   *
+   * It was hardcoded to "en" in index.html, so every French and Spanish page
+   * declared itself English. That misleads screen readers about pronunciation,
+   * and it tells search and generative engines to file French content as
+   * English — which costs exactly the French-language queries this site most
+   * wants to answer.
+   */
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, t }}>

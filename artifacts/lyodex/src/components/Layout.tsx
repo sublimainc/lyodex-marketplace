@@ -128,6 +128,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       label: t.nav.groupAbout,
       items: [
         { href: "/how-it-works", label: t.nav.howItWorks, desc: t.nav.howItWorksDesc },
+        { href: "/faq", label: t.nav.faq, desc: t.nav.faqDesc },
         { href: "/trust", label: t.nav.trust, desc: t.nav.trustDesc },
       ],
     },
