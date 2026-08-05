@@ -11,7 +11,10 @@ const DIR = process.argv[2];
 if (!DIR) throw new Error("usage: node fd-report.mjs <data-dir>");
 
 function parseCsv(text) {
-  const lines = text.trim().split(/\r?\n/);
+  // The dataset is written with a UTF-8 BOM so Excel renders accents correctly.
+  // Left in place it would name the first column "﻿vendor" and every lookup
+  // against it would silently return undefined.
+  const lines = text.replace(/^﻿/, "").trim().split(/\r?\n/);
   const cols = lines[0].split(",");
   return lines.slice(1).filter(l => l.trim()).map(line => {
     const out = [];

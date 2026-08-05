@@ -369,6 +369,11 @@ const HEADERS = [
   "source_url", "observed_at", "note",
 ];
 
+// Excel on Windows assumes the system codepage unless a UTF-8 byte-order mark
+// is present, which turns "Québec" into "QuÃ©bec" for every accented product
+// name in the file. The BOM is invisible to every other reader.
+const BOM = "﻿";
+
 const esc = v => {
   const s = v === null || v === undefined ? "" : String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -376,7 +381,7 @@ const esc = v => {
 
 await writeFile(
   join(OUT, "freeze-dried-products.csv"),
-  [HEADERS.join(",")].concat(rows.map(r => HEADERS.map(h => esc(r[h])).join(","))).join("\n"),
+  BOM + [HEADERS.join(",")].concat(rows.map(r => HEADERS.map(h => esc(r[h])).join(","))).join("\n"),
   "utf8",
 );
 
@@ -407,7 +412,7 @@ const summary = Object.entries(byCategory)
 const SUM_HEADERS = ["category", "observations", "vendors", "median_cad_per_kg", "min_cad_per_kg", "max_cad_per_kg"];
 await writeFile(
   join(OUT, "freeze-dried-price-summary.csv"),
-  [SUM_HEADERS.join(",")].concat(summary.map(r => SUM_HEADERS.map(h => esc(r[h])).join(","))).join("\n"),
+  BOM + [SUM_HEADERS.join(",")].concat(summary.map(r => SUM_HEADERS.map(h => esc(r[h])).join(","))).join("\n"),
   "utf8",
 );
 
