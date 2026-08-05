@@ -36,3 +36,6 @@ Thumbs.db
 # Notes de travail — prix concurrents, contacts, journal d appels.
 # Le depot est public : ne jamais commiter ceci.
 QUESTIONNAIRE.md
+
+# Raw upstream catalogues re-fetchable with scripts/fd-fetch-catalogs.mjs
+data/market-research/catalog-cache/

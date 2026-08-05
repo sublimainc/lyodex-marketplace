@@ -1,0 +1,549 @@
+{
+  "built_at": "2026-08-05T11:23:01.266Z",
+  "fx_date": "2026-08-05",
+  "fx_rates_to_cad": {
+    "CAD": 1,
+    "USD": 1.37,
+    "EUR": 1.49,
+    "GBP": 1.74,
+    "AUD": 0.89,
+    "NZD": 0.82,
+    "NOK": 0.13,
+    "PLN": 0.35,
+    "SEK": 0.13,
+    "DKK": 0.2,
+    "CHF": 1.6
+  },
+  "method": "Prices and net weights read from each merchant's own public product catalogue. Net weight is taken from the merchant's declared net weight, variant name, product name, or description, in that order. Shopify's shipping-weight field is used only as a last resort and only when the implied price falls between 20 and 600 CAD/kg, because many merchants leave that field at a placeholder value. Rows with no establishable weight keep their price and have an empty price_per_kg. Summary figures exclude low-confidence weights.",
+  "stores": [
+    {
+      "vendor": "Adventure Food",
+      "domain": "adventurefood.com",
+      "country": "NL",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Arctic Farms",
+      "domain": "arcticfarms.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 670,
+      "rows_with_price_per_kg": 560
+    },
+    {
+      "vendor": "Augason Farms",
+      "domain": "augasonfarms.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 11,
+      "rows_with_price_per_kg": 10
+    },
+    {
+      "vendor": "Back Country Cuisine",
+      "domain": "backcountrycuisine.co.nz",
+      "country": "NZ",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Backpacker's Pantry",
+      "domain": "backpackerspantry.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 14,
+      "rows_with_price_per_kg": 14
+    },
+    {
+      "vendor": "Bingco",
+      "domain": "bingcofd.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 72,
+      "rows_with_price_per_kg": 70
+    },
+    {
+      "vendor": "Brain Freeze Candy",
+      "domain": "brainfreezecandy.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 27,
+      "rows_with_price_per_kg": 1
+    },
+    {
+      "vendor": "Campers Pantry",
+      "domain": "camperspantry.com.au",
+      "country": "AU",
+      "fetch_status": "ok",
+      "currency": "AUD",
+      "rows": 18,
+      "rows_with_price_per_kg": 13
+    },
+    {
+      "vendor": "Cook'n'Run",
+      "domain": "cooknrun.com",
+      "country": "FR",
+      "fetch_status": "ok",
+      "currency": "EUR",
+      "rows": 7,
+      "rows_with_price_per_kg": 1
+    },
+    {
+      "vendor": "Crunch Dried",
+      "domain": "crunchdried.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Expedition Foods",
+      "domain": "expeditionfoods.com",
+      "country": "GB",
+      "fetch_status": "ok",
+      "currency": "GBP",
+      "rows": 553,
+      "rows_with_price_per_kg": 542
+    },
+    {
+      "vendor": "Firepot",
+      "domain": "firepot.co.uk",
+      "country": "GB",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Freezedried & Co",
+      "domain": "freezedriedandco.com",
+      "country": "GB",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Freeze Dried Candy Co",
+      "domain": "freezedriedcandyco.ca",
+      "country": "CA",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Freeze Dried Depot",
+      "domain": "freezedrieddepot.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 32,
+      "rows_with_price_per_kg": 28
+    },
+    {
+      "vendor": "Freeze Dry Industries",
+      "domain": "freezedryindustries.com.au",
+      "country": "AU",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Freeze Dry Wholesalers",
+      "domain": "freezedrywholesalers.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 248,
+      "rows_with_price_per_kg": 205
+    },
+    {
+      "vendor": "Freeze N Dried",
+      "domain": "freezendried.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Good To-Go",
+      "domain": "goodto-go.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Happy Yak",
+      "domain": "happyyak.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 74,
+      "rows_with_price_per_kg": 74
+    },
+    {
+      "vendor": "Harmony House Foods",
+      "domain": "harmonyhousefoods.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 62,
+      "rows_with_price_per_kg": 62
+    },
+    {
+      "vendor": "Heather's Choice",
+      "domain": "heatherschoice.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "LYO Alimentation",
+      "domain": "lyo-alimentation.ca",
+      "country": "CA",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Lyo & Co",
+      "domain": "lyoetco.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 85,
+      "rows_with_price_per_kg": 61
+    },
+    {
+      "vendor": "LyoFood",
+      "domain": "lyofood.com",
+      "country": "PL",
+      "fetch_status": "ok",
+      "currency": "EUR",
+      "rows": 102,
+      "rows_with_price_per_kg": 102
+    },
+    {
+      "vendor": "Lyophilise & Co",
+      "domain": "lyophilise.co.uk",
+      "country": "GB",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Lyovit",
+      "domain": "lyovit.com",
+      "country": "PL",
+      "fetch_status": "ok",
+      "currency": "PLN",
+      "rows": 36,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Marché Simplitude",
+      "domain": "marche.simplitude.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 53,
+      "rows_with_price_per_kg": 53
+    },
+    {
+      "vendor": "Mile Hi Sweets and Treats",
+      "domain": "milehisweetsandtreats.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 26,
+      "rows_with_price_per_kg": 18
+    },
+    {
+      "vendor": "Mother Earth Products",
+      "domain": "motherearthproducts.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 43,
+      "rows_with_price_per_kg": 36
+    },
+    {
+      "vendor": "Mountain House",
+      "domain": "mountainhouse.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 105,
+      "rows_with_price_per_kg": 94
+    },
+    {
+      "vendor": "Mount Trail",
+      "domain": "mounttrail.com",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 22,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "North Bay Trading",
+      "domain": "northbaytrading.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "NutriCraft",
+      "domain": "nutricraft.ca",
+      "country": "CA",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Nutrient Survival",
+      "domain": "nutrientsurvival.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 22,
+      "rows_with_price_per_kg": 21
+    },
+    {
+      "vendor": "Nutristore",
+      "domain": "nutristorefoods.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Packit Gourmet",
+      "domain": "packitgourmet.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Peak Refuel",
+      "domain": "peakrefuel.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 33,
+      "rows_with_price_per_kg": 20
+    },
+    {
+      "vendor": "Radix Nutrition",
+      "domain": "radixnutrition.com",
+      "country": "NZ",
+      "fetch_status": "ok",
+      "currency": "NZD",
+      "rows": 143,
+      "rows_with_price_per_kg": 123
+    },
+    {
+      "vendor": "ReadyWise",
+      "domain": "readywise.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 72,
+      "rows_with_price_per_kg": 35
+    },
+    {
+      "vendor": "Real Turmat",
+      "domain": "realturmat.no",
+      "country": "NO",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Rocket Krunch",
+      "domain": "rocketkrunch.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 20,
+      "rows_with_price_per_kg": 20
+    },
+    {
+      "vendor": "Shelf 2 Table",
+      "domain": "shelf2table.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 32,
+      "rows_with_price_per_kg": 30
+    },
+    {
+      "vendor": "Spry Active",
+      "domain": "spryactive.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Stowaway Gourmet",
+      "domain": "stowaway.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Sublima",
+      "domain": "sublima.co",
+      "country": "CA",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Summit to Eat",
+      "domain": "summittoeat.com",
+      "country": "GB",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Supreme Freeze Dry",
+      "domain": "supremefreezedry.com",
+      "country": "CA",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "SweetyTreatyCo",
+      "domain": "sweetytreatyco.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 41,
+      "rows_with_price_per_kg": 31
+    },
+    {
+      "vendor": "Tactical Foodpack",
+      "domain": "tacticalfoodpack.com",
+      "country": "EE",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "The Freeze Dried Candy Store",
+      "domain": "thefreezedriedcandystore.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 306,
+      "rows_with_price_per_kg": 280
+    },
+    {
+      "vendor": "The Freeze Dry Co",
+      "domain": "thefreezedryco.ca",
+      "country": "CA",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Thrive Life",
+      "domain": "thrivelife.com",
+      "country": "US",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Trek'n Eat",
+      "domain": "trek-n-eat.de",
+      "country": "DE",
+      "fetch_status": "no_feed",
+      "currency": null,
+      "rows": 0,
+      "rows_with_price_per_kg": 0
+    },
+    {
+      "vendor": "Valley Food Storage",
+      "domain": "valleyfoodstorage.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 88,
+      "rows_with_price_per_kg": 82
+    },
+    {
+      "vendor": "Yum Yum Candy Shop",
+      "domain": "yumyumcandyshop.com",
+      "country": "US",
+      "fetch_status": "ok",
+      "currency": "USD",
+      "rows": 11,
+      "rows_with_price_per_kg": 10
+    },
+    {
+      "vendor": "Zyo",
+      "domain": "zyo.ca",
+      "country": "CA",
+      "fetch_status": "ok",
+      "currency": "CAD",
+      "rows": 21,
+      "rows_with_price_per_kg": 21
+    },
+    {
+      "vendor": "Supreme Freeze Dry",
+      "domain": "supremefreezedry.com",
+      "country": "CA",
+      "fetch_status": "manual_transcription",
+      "currency": "USD",
+      "rows": 18,
+      "rows_with_price_per_kg": 15
+    }
+  ],
+  "totals": {
+    "stores_surveyed": 58,
+    "stores_with_data": 32,
+    "product_rows": 3067,
+    "rows_with_price_per_kg": 2632,
+    "rows_in_summary": 507
+  }
+}
