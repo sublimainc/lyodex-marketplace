@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/lib/i18n";
+import { PageMotif } from "@/components/PageMotif";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -89,7 +90,8 @@ export default function Machinery() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <section className="bg-[#0a1628] text-white py-10 px-4">
+      <section className="bg-[#0a1628] text-white py-10 px-4 relative overflow-hidden">
+        <PageMotif kind="pump" />
         <div className="container mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="text-xs font-semibold tracking-widest uppercase text-primary mb-2">{m.tag}</div>

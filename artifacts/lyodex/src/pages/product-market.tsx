@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useLanguage } from "@/lib/i18n";
 import { LockGate } from "@/components/LockGate";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { PageMotif } from "@/components/PageMotif";
 import {
   Package, PackagePlus, Search, ChevronDown, ChevronUp,
   MapPin, Droplets, Clock, ShieldCheck, Star, X,
@@ -144,7 +145,8 @@ export default function ProductMarket() {
     <LockGate locked={marketplace_locked}>
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#f0fdf4] to-[#e0f2fe] py-14">
+      <section className="bg-gradient-to-br from-[#f0fdf4] to-[#e0f2fe] py-14 relative overflow-hidden">
+        <PageMotif kind="condenser" />
         <div className="container mx-auto px-4 text-center">
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-[#0F6E56] mb-3">
             {pm.eyebrow}

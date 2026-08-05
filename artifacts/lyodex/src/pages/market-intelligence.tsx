@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import { useLanguage } from "@/lib/i18n";
 import { LockGate } from "@/components/LockGate";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { PageMotif } from "@/components/PageMotif";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -163,7 +164,8 @@ export default function MarketIntelligence() {
   return (
     <LockGate locked={market_intelligence_locked}>
       <div className="flex flex-col min-h-screen bg-background">
-        <section className="border-b py-10 px-4">
+        <section className="border-b py-10 px-4 relative overflow-hidden">
+        <PageMotif kind="grid" />
           <div className="container mx-auto">
             <h1 className="text-3xl font-bold tracking-tight mb-1">{mi.title}</h1>
             <p className="text-muted-foreground text-sm mb-1">{mi.subtitle}</p>

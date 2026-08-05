@@ -3,6 +3,7 @@ import { CalendarRange, Info, HelpCircle, Mail, ShoppingCart, Factory } from "lu
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
+import { PageMotif } from "@/components/PageMotif";
 
 /**
  * Operator-reported demand seasonality.
@@ -66,7 +67,8 @@ export default function Seasonality() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <section className="border-b py-10 px-4">
+      <section className="border-b py-10 px-4 relative overflow-hidden">
+        <PageMotif kind="cycle" />
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-primary mb-2">
             <CalendarRange className="w-5 h-5" />

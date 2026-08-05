@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { platformEventsTable } from "@workspace/db/schema";
-import { requireAuth } from "../middleware/requireAuth";
+import { optionalAuth } from "../middleware/requireAuth";
 import { createHash } from "crypto";
 import { z } from "zod/v4";
 import rateLimit from "express-rate-limit";
@@ -40,15 +40,28 @@ const TrackEventBody = z.object({
     .optional(),
 });
 
-// POST /events — authenticated platform interaction tracking.
-// No PII is stored: IP is one-way hashed using req.ip (proxy-aware, single
-// trusted hop) rather than the raw x-forwarded-for header, which callers can
-// spoof. Authentication is required to prevent unauthenticated telemetry
-// poisoning and database flooding.
-router.post("/events", eventsLimiter, requireAuth, async (req, res): Promise<void> => {
+// POST /events — platform interaction tracking.
+//
+// No PII is stored: the IP is one-way hashed from req.ip (proxy-aware, single
+// trusted hop) rather than the spoofable x-forwarded-for header.
+//
+// Auth requirement is deliberately asymmetric. Requiring a session for every
+// event made traffic measurement impossible — almost everyone arriving from an
+// ad or a search result is anonymous, so nothing was ever recorded. Anonymous
+// callers may therefore send "page_view" and nothing else: it carries no
+// entity reference and cannot be used to fabricate marketplace activity. Every
+// other event type still needs a session, because those do imply something
+// happened to a specific record. The per-IP rate limit above covers flooding
+// in both cases.
+router.post("/events", eventsLimiter, optionalAuth, async (req, res): Promise<void> => {
   const parsed = TrackEventBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  if (!req.user && parsed.data.event_type !== "page_view") {
+    res.status(401).json({ error: "Sign in required to record this event" });
     return;
   }
 

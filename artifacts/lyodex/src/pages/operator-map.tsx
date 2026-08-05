@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLanguage } from "@/lib/i18n";
+import { PageMotif } from "@/components/PageMotif";
 
 /**
  * Operator map.
@@ -91,7 +92,8 @@ export default function OperatorMap() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <section className="bg-background border-b py-6 px-4">
+      <section className="bg-background border-b py-6 px-4 relative overflow-hidden">
+        <PageMotif kind="chamber" />
         <div className="container mx-auto">
           <h1 className="text-3xl font-bold tracking-tight mb-1">{om.title}</h1>
           <p className="text-muted-foreground text-sm mb-3">

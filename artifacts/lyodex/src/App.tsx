@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { usePageViews } from "@/hooks/usePageViews";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/i18n";
@@ -48,6 +49,10 @@ const queryClient = new QueryClient({
 });
 
 function Router() {
+  // Records a page view on every route change. Without this the platform_events
+  // table stayed empty and the admin panel had no traffic figures at all.
+  usePageViews();
+
   return (
     <Layout>
       <Switch>

@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { TrafficTab, ObservationsTab, NewsletterTab } from "./admin-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +16,7 @@ import {
   Globe, BookOpen, LayoutList, Plus, Trash2, Pencil, CheckCircle2, XOctagon, Upload, Loader2,
   MapPin, Building2, X, ChevronDown, ChevronUp, Package,
   FileDown, Calendar, TrendingUp, RefreshCw, Save,
+  Eye, NotebookPen, Mail,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import {
@@ -345,11 +348,14 @@ const PAGE_SIZE = 25;
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
 
 function OverviewTab({ overview, loading }: { overview: Overview | null; loading: boolean }) {
+  // The rate is set by PLATFORM_FEE_PERCENT on the server, not baked into this
+  // file — the label read "(9%)" while the platform was charging nothing.
+  const { platform_fee_percent: feePercent } = useSiteSettings();
   const kpis = [
     { label: "Total users", value: overview?.total_users, icon: Users },
     { label: "Active requests", value: overview?.active_requests, icon: FileText },
     { label: "Completed contracts", value: overview?.completed_contracts, icon: CheckSquare },
-    { label: "Platform revenue (9%)", value: overview ? fmt(overview.total_platform_revenue) : undefined, icon: DollarSign },
+    { label: feePercent > 0 ? `Platform revenue (${feePercent}%)` : "Platform revenue (fees waived)", value: overview ? fmt(overview.total_platform_revenue) : undefined, icon: DollarSign },
   ];
 
   return (
@@ -642,9 +648,12 @@ function UsersTab() {
                           className="h-7 text-xs border rounded px-1.5 bg-background text-foreground disabled:opacity-50"
                           value={u.admin_role ?? ""}
                           disabled={roleWorking === u.id}
-                          onChange={(e) => setAdminRole(u.id, e.target.value || null)}
+                          onChange={(e) => { if (e.target.value) setAdminRole(u.id, e.target.value); }}
                         >
-                          <option value="">No sub-role</option>
+                          {/* Clearing the sub-role is intentionally impossible: a null
+                              admin_role means full super-admin, so "no sub-role" silently
+                              escalated. The server rejects null for the same reason. */}
+                          <option value="" disabled>Select a sub-role…</option>
                           {ADMIN_ROLE_OPTIONS.map((r) => (
                             <option key={r} value={r}>{ADMIN_ROLE_LABELS[r]}</option>
                           ))}
@@ -1395,7 +1404,10 @@ function TransactionsTab() {
                 ))
               ) : txns.map((t) => {
                 const escrowValue = (t.escrow_amount_cents ?? 0) > 0 ? t.escrow_amount_cents! / 100 : t.contract_value;
-                const platformFee = +(escrowValue * 0.09).toFixed(2);
+                // The server already computed this from the rate snapshotted on the
+                // bid (historicalFeeRate). Recomputing at a flat 9% here restated
+                // grandfathered contracts and disagreed with the header total.
+                const platformFee = t.fee_amount;
                 return (
                 <tr key={t.bid_id} className="hover:bg-muted/20 transition-colors">
                   <td className="px-4 py-3 text-muted-foreground text-xs">#{t.request_id}</td>
@@ -3139,7 +3151,7 @@ function SiteControlsTab() {
                   <p className="font-medium text-sm">Scheduled Reports</p>
                   <p className="text-xs text-muted-foreground">
                     {reportSettings.enabled
-                      ? `Enabled — sending ${reportSettings.cadence} reports to ${process.env.ADMIN_EMAIL ?? "audit@lyodex.com"}`
+                      ? `Enabled — sending ${reportSettings.cadence} reports to the configured admin address`
                       : "Disabled — no scheduled emails will be sent"}
                   </p>
                 </div>
@@ -4358,7 +4370,7 @@ function ListingsCRUDTab() {
               </div>
               <FormField label="Turnaround (days)"><input className={inputCls} type="number" value={String(formData.turnaround_days ?? "")} onChange={e => setF("turnaround_days", Number(e.target.value))} /></FormField>
               <FormField label="Notes"><textarea className={inputCls} rows={2} value={String(formData.notes ?? "")} onChange={e => setF("notes", e.target.value || null)} /></FormField>
-              {!editItem && <FormField label="User ID"><input className={inputCls} type="number" value={String(formData.user_id ?? "")} onChange={e => setF("user_id", e.target.value ? Number(e.target.value) : null)} placeholder="Owner user ID" /></FormField>}
+              {!editItem && <FormField label="User ID"><input className={inputCls} type="number" value={String(formData.user_id ?? "")} onChange={e => setF("user_id", e.target.value ? Number(e.target.value) : undefined)} placeholder="Required — owner user ID" /></FormField>}
             </>
           ) : (
             <>
@@ -5514,10 +5526,11 @@ function ReportsTab() {
   );
 }
 
-type Tab = "overview" | "users" | "operators" | "requests" | "transactions" | "insights" | "messages" | "disputes" | "audit" | "price-data" | "site-controls" | "blog" | "listings" | "machinery" | "listings-approval" | "manufacturers" | "map" | "reports";
+type Tab = "overview" | "traffic" | "observations" | "newsletter" | "users" | "operators" | "requests" | "transactions" | "insights" | "messages" | "disputes" | "audit" | "price-data" | "site-controls" | "blog" | "listings" | "machinery" | "listings-approval" | "manufacturers" | "map" | "reports";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Overview", icon: Activity },
+  { id: "traffic", label: "Traffic", icon: Eye },
   { id: "users", label: "Users", icon: Users },
   { id: "operators", label: "Operators", icon: ShieldCheck },
   { id: "manufacturers", label: "Manufacturers", icon: Building2 },
@@ -5530,11 +5543,13 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "insights", label: "Market Intel", icon: TrendingUp },
   { id: "reports", label: "Reports", icon: FileDown },
   { id: "price-data", label: "Price Data", icon: Database },
+  { id: "observations", label: "Observations", icon: NotebookPen },
   { id: "messages", label: "Messages", icon: MessageSquare },
   { id: "disputes", label: "Disputes", icon: Scale },
   { id: "audit", label: "Audit Log", icon: ClipboardList },
   { id: "site-controls", label: "Site Controls", icon: Globe },
   { id: "blog", label: "Blog CMS", icon: BookOpen },
+  { id: "newsletter", label: "Newsletter", icon: Mail },
 ];
 
 export default function AdminPanel() {
@@ -5634,6 +5649,9 @@ export default function AdminPanel() {
         <main className="flex-1 py-6 md:pl-8 overflow-x-auto min-w-0">
           <SystemAlertBanner alerts={systemAlerts} onDismiss={dismissSystemAlert} />
           {tab === "overview" && <OverviewTab overview={overview} loading={overviewLoading} />}
+          {tab === "traffic" && <TrafficTab />}
+          {tab === "observations" && <ObservationsTab />}
+          {tab === "newsletter" && <NewsletterTab />}
           {tab === "users" && <UsersTab />}
           {tab === "operators" && <OperatorsTab />}
           {tab === "manufacturers" && <ManufacturersTab />}
