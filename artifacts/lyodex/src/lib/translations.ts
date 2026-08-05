@@ -93,7 +93,7 @@ export const translations = {
         },
         {
           title: "2. Receive Bids",
-          desc: "Verified operators review your specs and submit competitive bids within hours.",
+          desc: "Operators review your specs and submit sealed bids, which appear in your dashboard as they arrive.",
         },
         {
           title: "3. Secure Contracts",
@@ -301,7 +301,7 @@ export const translations = {
     },
     dashboard: {
       title: "Marketplace Intelligence",
-      subtitle: "Real-time overview of the LyoDex network health and activity.",
+      subtitle: "Live figures from platform activity, computed as they happen.",
       networkOperators: "Network Operators",
       activeVerified: "Active & Verified",
       liveRequests: "Live Requests",
@@ -429,7 +429,7 @@ export const translations = {
         {
           num: "02",
           title: "Operators review & bid",
-          desc: "Verified freeze-drying facilities across Canada and the US review your specs. You receive competitive bids directly in your dashboard within hours.",
+          desc: "Operators on the platform review your specs and submit sealed bids. They appear in your dashboard as they arrive — you are notified by email each time.",
         },
         {
           num: "03",
@@ -484,15 +484,15 @@ export const translations = {
       trustItems: [
         {
           title: "Operator verification",
-          desc: "Every operator is audited for certifications before accepting bids. Fake listings are removed immediately.",
+          desc: "Operators upload certification documents for review. Certificates confirmed by LyoDex carry a verified badge; everything else is labelled unverified so you know what you are looking at.",
         },
         {
-          title: "Verified reviews",
-          desc: "Only buyers who completed a transaction can leave a review. Ratings reflect real performance.",
+          title: "Sealed bidding",
+          desc: "Operators see only their own quote, never a competitor's. Buyers get independent prices instead of a race to undercut the last bid shown.",
         },
         {
           title: "Price transparency",
-          desc: "Market Intelligence shows real transaction pricing — so buyers never overpay and operators price confidently.",
+          desc: "Market Intelligence publishes price benchmarks computed from bids submitted on the platform. Figures are withheld until enough independent operators have contributed, so no single operator's pricing is exposed.",
         },
         {
           title: "Standardized contracts",
@@ -593,20 +593,12 @@ export const translations = {
       noArticles: "No articles in this category yet.",
       categories: ["All", "Market intelligence", "Technical", "Pharmaceutical", "Pet Food", "Operations", "Regulatory"],
       readTime: "min read",
-      articles: [
-        { title: "GLP-1 Peptide Demand Is Reshaping the Lyophilization Market", excerpt: "Semaglutide and tirzepatide shortages are pushing pharmaceutical manufacturers toward contract lyophilization at unprecedented rates.", date: "April 18, 2026" },
-        { title: "Canada's Freeze-Dried Pet Food Market Is Growing at 22% Annually", excerpt: "Raw and freeze-dried pet food has moved from niche to mainstream. Independent operators are struggling to keep up.", date: "April 12, 2026" },
-        { title: "Food-Grade Lyophilization Prices Rose 4.2% in Q1 2026", excerpt: "Energy costs and increased demand from the nutraceutical sector pushed average food-grade prices higher across Canada and the US.", date: "April 5, 2026" },
-        { title: "Shelf Temperature Profiles: What Buyers Should Know Before Submitting an RFQ", excerpt: "The difference between a successful lyophilization run and a failed batch often comes down to one overlooked parameter.", date: "March 28, 2026" },
-        { title: "How Operators Are Using Market Intelligence to Win More Bids", excerpt: "LyoDex operators who benchmark their pricing against platform data win 38% more contracts than those who price by gut feel.", date: "March 20, 2026" },
-        { title: "Health Canada's Proposed GMP Updates: What They Mean for Freeze-Dry Operators", excerpt: "A new regulatory guidance document could require significant facility upgrades for operators handling pharmaceutical-grade products.", date: "March 10, 2026" },
-      ],
     },
     machinery: {
       tag: "Marketplace",
       title: "Freeze-Drying Machinery & Parts for Sale",
       subtitle:
-        "Buy and sell freeze-dryers, condensers, shelving, vacuum pumps, and freeze-drying accessories across North America. Verified listings from operators and businesses.",
+        "Buy and sell freeze-dryers, condensers, shelving, vacuum pumps, and freeze-drying accessories across North America. Every listing is reviewed before it appears.",
       listEquipment: "List your equipment",
       searchPlaceholder: "Search machines, brands, models...",
       categories: ["All categories", "Freeze-dryers", "Condensers", "Shelving systems", "Vacuum pumps", "Accessories", "Parts"],
@@ -840,7 +832,7 @@ export const translations = {
     machineryForm: {
       backToMachinery: "Back to Machinery",
       title: "List your equipment",
-      subtitle: "Sell your freeze-drying equipment or parts to verified buyers across North America and Europe.",
+      subtitle: "List your freeze-drying equipment or parts for buyers across North America and Europe.",
       typeMachine: "Machine",
       typeParts: "Parts / Components",
       sectionMachineId: "Machine identification",
@@ -1124,7 +1116,7 @@ export const translations = {
         },
         {
           title: "2. Recevoir des offres",
-          desc: "Les opérateurs vérifiés examinent vos spécifications et soumettent des offres compétitives en quelques heures.",
+          desc: "Les opérateurs examinent vos spécifications et déposent des soumissions scellées, qui apparaissent dans votre tableau de bord à mesure qu'elles arrivent.",
         },
         {
           title: "3. Sécuriser les contrats",
@@ -1334,7 +1326,7 @@ export const translations = {
     dashboard: {
       title: "Intelligence du marché",
       subtitle:
-        "Vue d'ensemble en temps réel de la santé et de l'activité du réseau LyoDex.",
+        "Chiffres en direct de l'activité de la plateforme, calculés en continu.",
       networkOperators: "Opérateurs du réseau",
       activeVerified: "Actifs et vérifiés",
       liveRequests: "Demandes actives",
@@ -1462,7 +1454,7 @@ export const translations = {
         {
           num: "02",
           title: "Les opérateurs examinent et soumissionnent",
-          desc: "Les installations vérifiées au Canada et aux États-Unis examinent vos spécifications. Vous recevez des offres compétitives dans votre tableau de bord en quelques heures.",
+          desc: "Les opérateurs de la plateforme examinent vos spécifications et déposent des soumissions scellées. Elles apparaissent dans votre tableau de bord à mesure qu'elles arrivent — vous êtes averti par courriel à chaque fois.",
         },
         {
           num: "03",
@@ -1517,15 +1509,15 @@ export const translations = {
       trustItems: [
         {
           title: "Vérification des opérateurs",
-          desc: "Chaque opérateur est audité pour ses certifications avant d'accepter des offres. Les faux profils sont supprimés immédiatement.",
+          desc: "Les opérateurs téléversent leurs documents de certification pour examen. Les certificats confirmés par LyoDex portent un badge vérifié ; tout le reste est étiqueté non vérifié, pour que vous sachiez ce que vous regardez.",
         },
         {
-          title: "Avis vérifiés",
-          desc: "Seuls les acheteurs ayant complété une transaction peuvent laisser un avis. Les notes reflètent de vraies performances.",
+          title: "Soumissions scellées",
+          desc: "Un opérateur ne voit que sa propre soumission, jamais celle d'un concurrent. L'acheteur obtient des prix indépendants plutôt qu'une course pour passer sous la dernière offre affichée.",
         },
         {
           title: "Transparence des prix",
-          desc: "L'Intelligence marché affiche les vrais prix de transaction — pour que les acheteurs ne surpayent jamais et que les opérateurs tarif en confiance.",
+          desc: "L'Intelligence marché publie des repères calculés à partir des soumissions déposées sur la plateforme. Les chiffres sont retenus tant qu'assez d'opérateurs indépendants n'ont pas contribué, afin qu'aucun prix individuel ne soit exposé.",
         },
         {
           title: "Contrats standardisés",
@@ -1626,20 +1618,12 @@ export const translations = {
       noArticles: "Aucun article dans cette catégorie pour l'instant.",
       categories: ["Tous", "Intelligence marché", "Technique", "Pharmaceutique", "Animaux de compagnie", "Opérations", "Réglementaire"],
       readTime: "min de lecture",
-      articles: [
-        { title: "La demande de peptides GLP-1 remodèle le marché de la lyophilisation", excerpt: "Les pénuries de sémaglutide et de tirzépatide poussent les fabricants pharmaceutiques vers la lyophilisation contractuelle à des taux sans précédent.", date: "18 avril 2026" },
-        { title: "Le marché canadien des aliments lyophilisés pour animaux croît à 22 % par an", excerpt: "Les aliments crus et lyophilisés pour animaux sont passés de niche au courant dominant. Les opérateurs indépendants peinent à suivre.", date: "12 avril 2026" },
-        { title: "Les prix de lyophilisation alimentaire ont augmenté de 4,2 % au T1 2026", excerpt: "Les coûts énergétiques et la hausse de la demande du secteur nutraceutique ont tiré les prix moyens à la hausse au Canada et aux États-Unis.", date: "5 avril 2026" },
-        { title: "Profils de température des étagères : ce que les acheteurs doivent savoir avant de soumettre un appel d'offres", excerpt: "La différence entre une lyophilisation réussie et un lot raté tient souvent à un seul paramètre négligé.", date: "28 mars 2026" },
-        { title: "Comment les opérateurs utilisent l'intelligence marché pour remporter plus d'appels d'offres", excerpt: "Les opérateurs LyoDex qui comparent leurs prix aux données de la plateforme remportent 38 % plus de contrats.", date: "20 mars 2026" },
-        { title: "Les mises à jour BPF proposées par Santé Canada : ce qu'elles signifient pour les opérateurs de lyophilisation", excerpt: "Un nouveau document d'orientation réglementaire pourrait nécessiter des mises à niveau importantes pour les opérateurs traitant des produits pharmaceutiques.", date: "10 mars 2026" },
-      ],
     },
     machinery: {
       tag: "Marché",
       title: "Machines et pièces de lyophilisation à vendre",
       subtitle:
-        "Achetez et vendez des lyophilisateurs, condenseurs, systèmes d'étagères, pompes à vide et accessoires en Amérique du Nord. Annonces vérifiées d'opérateurs et d'entreprises.",
+        "Achetez et vendez des lyophilisateurs, condenseurs, systèmes d'étagères, pompes à vide et accessoires en Amérique du Nord. Chaque annonce est examinée avant sa publication.",
       listEquipment: "Mettre votre équipement en vente",
       searchPlaceholder: "Rechercher machines, marques, modèles...",
       categories: ["Toutes catégories", "Lyophilisateurs", "Condenseurs", "Systèmes d'étagères", "Pompes à vide", "Accessoires", "Pièces"],
@@ -2156,7 +2140,7 @@ export const translations = {
         },
         {
           title: "2. Recibir ofertas",
-          desc: "Los operadores verificados revisan sus especificaciones y envían ofertas competitivas en horas.",
+          desc: "Los operadores revisan sus especificaciones y envían ofertas selladas, que aparecen en su panel a medida que llegan.",
         },
         {
           title: "3. Asegurar contratos",
@@ -2366,7 +2350,7 @@ export const translations = {
     dashboard: {
       title: "Inteligencia de mercado",
       subtitle:
-        "Resumen en tiempo real de la salud y actividad de la red LyoDex.",
+        "Cifras en vivo de la actividad de la plataforma, calculadas en tiempo real.",
       networkOperators: "Operadores de la red",
       activeVerified: "Activos y verificados",
       liveRequests: "Solicitudes activas",
@@ -2494,7 +2478,7 @@ export const translations = {
         {
           num: "02",
           title: "Los operadores revisan y ofertan",
-          desc: "Instalaciones verificadas en Canadá y EE.UU. revisan sus especificaciones. Recibe ofertas competitivas directamente en su panel en horas.",
+          desc: "Los operadores de la plataforma revisan sus especificaciones y envían ofertas selladas. Aparecen en su panel a medida que llegan — se le notifica por correo cada vez.",
         },
         {
           num: "03",
@@ -2549,15 +2533,15 @@ export const translations = {
       trustItems: [
         {
           title: "Verificación de operadores",
-          desc: "Cada operador es auditado por sus certificaciones antes de aceptar ofertas. Los listados falsos se eliminan de inmediato.",
+          desc: "Los operadores suben sus documentos de certificación para revisión. Los certificados confirmados por LyoDex llevan una insignia verificada; el resto se etiqueta como no verificado, para que sepa qué está viendo.",
         },
         {
-          title: "Reseñas verificadas",
-          desc: "Solo los compradores que completaron una transacción pueden dejar una reseña. Las calificaciones reflejan el rendimiento real.",
+          title: "Ofertas selladas",
+          desc: "Un operador solo ve su propia oferta, nunca la de un competidor. El comprador obtiene precios independientes en lugar de una carrera por bajar la última oferta mostrada.",
         },
         {
           title: "Transparencia de precios",
-          desc: "Inteligencia de mercado muestra precios de transacción reales — para que los compradores nunca paguen de más y los operadores fijen precios con confianza.",
+          desc: "Inteligencia de mercado publica referencias calculadas a partir de las ofertas enviadas en la plataforma. Las cifras se retienen hasta que suficientes operadores independientes hayan contribuido, para que ningún precio individual quede expuesto.",
         },
         {
           title: "Contratos estandarizados",
@@ -2658,20 +2642,12 @@ export const translations = {
       noArticles: "No hay artículos en esta categoría aún.",
       categories: ["Todos", "Inteligencia de mercado", "Técnico", "Farmacéutico", "Mascotas", "Operaciones", "Regulatorio"],
       readTime: "min de lectura",
-      articles: [
-        { title: "La demanda de péptidos GLP-1 está remodelando el mercado de liofilización", excerpt: "La escasez de semaglutida y tirzepatida está impulsando a los fabricantes farmacéuticos hacia la liofilización por contrato a tasas sin precedentes.", date: "18 de abril de 2026" },
-        { title: "El mercado canadiense de alimentos liofilizados para mascotas crece a un 22 % anual", excerpt: "Los alimentos crudos y liofilizados para mascotas pasaron de nicho a corriente principal. Los operadores independientes luchan por mantenerse al día.", date: "12 de abril de 2026" },
-        { title: "Los precios de liofilización alimentaria subieron un 4,2 % en el T1 2026", excerpt: "Los costes energéticos y el aumento de la demanda del sector nutracéutico elevaron los precios promedio en Canadá y EE. UU.", date: "5 de abril de 2026" },
-        { title: "Perfiles de temperatura de estantes: lo que los compradores deben saber antes de enviar una solicitud", excerpt: "La diferencia entre una liofilización exitosa y un lote fallido suele reducirse a un parámetro pasado por alto.", date: "28 de marzo de 2026" },
-        { title: "Cómo los operadores usan la inteligencia de mercado para ganar más licitaciones", excerpt: "Los operadores de LyoDex que comparan sus precios con los datos de la plataforma ganan un 38 % más de contratos.", date: "20 de marzo de 2026" },
-        { title: "Las actualizaciones de BPF propuestas por Health Canada: qué significan para los operadores de liofilización", excerpt: "Un nuevo documento de orientación regulatoria podría requerir mejoras significativas en las instalaciones para operadores de productos farmacéuticos.", date: "10 de marzo de 2026" },
-      ],
     },
     machinery: {
       tag: "Mercado",
       title: "Maquinaria y piezas de liofilización en venta",
       subtitle:
-        "Compre y venda liofilizadores, condensadores, sistemas de estantes, bombas de vacío y accesorios en América del Norte. Listados verificados de operadores y empresas.",
+        "Compre y venda liofilizadores, condensadores, sistemas de estantes, bombas de vacío y accesorios en América del Norte. Cada listado se revisa antes de publicarse.",
       listEquipment: "Listar su equipo",
       searchPlaceholder: "Buscar máquinas, marcas, modelos...",
       categories: ["Todas las categorías", "Liofilizadores", "Condensadores", "Sistemas de estantes", "Bombas de vacío", "Accesorios", "Piezas"],
