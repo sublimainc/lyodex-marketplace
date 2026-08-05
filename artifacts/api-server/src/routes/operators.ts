@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, operatorsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
 import {
   CreateMyOperatorProfileBody,
   CreateOperatorBody,
@@ -14,7 +14,16 @@ import { requireAuth, requireRole } from "../middleware/requireAuth";
 const router: IRouter = Router();
 
 router.get("/operators", async (req, res): Promise<void> => {
-  const operators = await db.select().from(operatorsTable).orderBy(operatorsTable.id);
+  // Registration creates a placeholder operator row (location "TBD") so that
+  // admin audit actions always have something to attach to. That row is not a
+  // directory entry: it has no location, no capacity and no description, and
+  // publishing it would put an empty listing beside researched companies.
+  // An operator appears here once they have said where they are.
+  const operators = await db
+    .select()
+    .from(operatorsTable)
+    .where(ne(operatorsTable.location, "TBD"))
+    .orderBy(operatorsTable.id);
   res.json(ListOperatorsResponse.parse(operators.map(op => ({
     ...op,
     created_at: op.created_at.toISOString(),

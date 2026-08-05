@@ -7,69 +7,13 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { NotificationBell } from "@/components/NotificationBell";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 const ROLE_COLORS: Record<string, string> = {
   buyer: "bg-blue-100 text-blue-700",
   operator: "bg-emerald-100 text-emerald-700",
   admin: "bg-amber-100 text-amber-700",
 };
-
-function PlatformDropdown({ location }: { location: string }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
-
-  const PLATFORM_ITEMS = [
-    { href: "/manufacturers", icon: Factory, label: t.nav.manufacturers, sub: t.nav.manufacturersDesc },
-    { href: "/machinery", icon: Wrench, label: t.nav.machinery, sub: t.nav.machineryDesc },
-    { href: "/operator-map", icon: MapPin, label: t.nav.operatorMap, sub: t.nav.operatorMapDesc },
-    { href: "/market-intelligence", icon: BarChart3, label: t.nav.marketIntelligence, sub: t.nav.marketIntelligenceDesc },
-    { href: "/product-market", icon: Package, label: t.nav.productMarket, sub: t.nav.productMarketDesc },
-    { href: "/blog", icon: BookOpen, label: t.nav.blog, sub: t.nav.blogDesc },
-    { href: "/trust", icon: ShieldCheck, label: t.nav.trust, sub: t.nav.trustDesc },
-  ];
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const platformActive = PLATFORM_ITEMS.some(i => location === i.href);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary ${platformActive ? "text-primary" : "text-muted-foreground"}`}
-      >
-        {t.nav.platform} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute top-full left-0 mt-2 w-56 rounded-xl border bg-background shadow-lg z-50 overflow-hidden">
-          {PLATFORM_ITEMS.map(item => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="flex items-start gap-3 p-3.5 hover:bg-muted/60 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <item.icon className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <div className="text-sm font-medium text-foreground leading-tight">{item.label}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{item.sub}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function UserMenu() {
   const { user, logout } = useAuth();
@@ -160,16 +104,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const isActive = (path: string) => location === path;
 
-  const MOBILE_NAV_ITEMS = [
-    { href: "/operators", label: t.nav.operators },
-    { href: "/manufacturers", label: t.nav.manufacturers },
-    { href: "/how-it-works", label: t.nav.howItWorks },
-    { href: "/pricing", label: t.nav.pricing },
-    { href: "/machinery", label: t.nav.machinery },
-    { href: "/operator-map", label: t.nav.operatorMap },
-    { href: "/market-intelligence", label: t.nav.marketIntelligence },
-    { href: "/blog", label: t.nav.blog },
-    { href: "/trust", label: t.nav.trust },
+  // Desktop navigation, grouped. Mobile keeps the same grouping as labelled
+  // sections rather than one long undifferentiated list.
+  const NAV_GROUPS = [
+    {
+      label: t.nav.groupMarketplace,
+      items: [
+        { href: "/machinery", label: t.nav.machinery, desc: t.nav.machineryDesc },
+        { href: "/product-market", label: t.nav.productMarket, desc: t.nav.productMarketDesc },
+        { href: "/manufacturers", label: t.nav.manufacturers, desc: t.nav.manufacturersDesc },
+        { href: "/operator-map", label: t.nav.operatorMap, desc: t.nav.operatorMapDesc },
+      ],
+    },
+    {
+      label: t.nav.groupInsights,
+      items: [
+        { href: "/market-intelligence", label: t.nav.marketIntelligence, desc: t.nav.marketIntelligenceDesc },
+        { href: "/seasonality", label: t.seasonality.title, desc: t.nav.seasonalityDesc },
+        { href: "/blog", label: t.nav.blog, desc: t.nav.blogDesc },
+      ],
+    },
+    {
+      label: t.nav.groupAbout,
+      items: [
+        { href: "/how-it-works", label: t.nav.howItWorks, desc: t.nav.howItWorksDesc },
+        { href: "/trust", label: t.nav.trust, desc: t.nav.trustDesc },
+      ],
+    },
+  ];
+
+  const MOBILE_NAV_SECTIONS = [
+    { label: null, items: [{ href: "/operators", label: t.nav.operators }, { href: "/pricing", label: t.nav.pricing }] },
+    ...NAV_GROUPS.map(g => ({ label: g.label, items: g.items.map(({ href, label }) => ({ href, label })) })),
   ];
 
   return (
@@ -182,15 +148,51 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <span className="font-bold text-lg tracking-tight">LyoDex</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
-              <Link href="/operators" className={`transition-colors hover:text-primary ${isActive("/operators") ? "text-primary" : "text-muted-foreground"}`} data-testid="nav-operators">{t.nav.operators}</Link>
-              <Link href="/how-it-works" className={`transition-colors hover:text-primary ${isActive("/how-it-works") ? "text-primary" : "text-muted-foreground"}`}>{t.nav.howItWorks}</Link>
-              <Link href="/pricing" className={`transition-colors hover:text-primary ${isActive("/pricing") ? "text-primary" : "text-muted-foreground"}`}>{t.nav.pricing}</Link>
-              <Link href="/machinery" className={`transition-colors hover:text-primary ${isActive("/machinery") ? "text-primary" : "text-muted-foreground"}`}>{t.nav.machinery}</Link>
-              <Link href="/product-market" className={`transition-colors hover:text-primary ${isActive("/product-market") ? "text-primary" : "text-muted-foreground"}`}>{t.nav.productMarket}</Link>
-              <Link href="/operator-map" className={`transition-colors hover:text-primary ${isActive("/operator-map") ? "text-primary" : "text-muted-foreground"}`}>{t.nav.operatorMap}</Link>
-              <Link href="/market-intelligence" className={`transition-colors hover:text-primary ${isActive("/market-intelligence") ? "text-primary" : "text-muted-foreground"}`}>{t.nav.marketIntelligence}</Link>
-              <Link href="/blog" className={`transition-colors hover:text-primary ${isActive("/blog") ? "text-primary" : "text-muted-foreground"}`}>{t.nav.blog}</Link>
+            {/* Eight flat links overflowed onto a second line once the labels were
+                translated ("Machinery & Parts", "Market Intelligence", …). Grouping
+                them into three menus keeps the bar to one line in every language
+                and gives each destination room for a one-line description. */}
+            <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+              <Link
+                href="/operators"
+                className={`px-3 py-2 rounded-md transition-colors hover:text-primary hover:bg-muted/60 ${isActive("/operators") ? "text-primary" : "text-muted-foreground"}`}
+                data-testid="nav-operators"
+              >
+                {t.nav.operators}
+              </Link>
+
+              {NAV_GROUPS.map(group => {
+                const groupActive = group.items.some(i => isActive(i.href));
+                return (
+                  <DropdownMenu key={group.label}>
+                    <DropdownMenuTrigger
+                      className={`flex items-center gap-1 px-3 py-2 rounded-md transition-colors outline-none hover:text-primary hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring ${groupActive ? "text-primary" : "text-muted-foreground"}`}
+                    >
+                      {group.label}
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-64">
+                      {group.items.map(item => (
+                        <DropdownMenuItem key={item.href} asChild>
+                          <Link href={item.href} className="flex flex-col items-start gap-0.5 cursor-pointer">
+                            <span className={`font-medium ${isActive(item.href) ? "text-primary" : ""}`}>
+                              {item.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground leading-snug">{item.desc}</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })}
+
+              <Link
+                href="/pricing"
+                className={`px-3 py-2 rounded-md transition-colors hover:text-primary hover:bg-muted/60 ${isActive("/pricing") ? "text-primary" : "text-muted-foreground"}`}
+              >
+                {t.nav.pricing}
+              </Link>
             </nav>
           </div>
 
@@ -223,12 +225,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden border-t bg-background px-4 py-4 space-y-3 text-sm font-medium">
-            {MOBILE_NAV_ITEMS.map(item => (
-              <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
-                className={`block py-1 ${isActive(item.href) ? "text-primary" : "text-muted-foreground"}`}>
-                {item.label}
-              </Link>
+          <div className="md:hidden border-t bg-background px-4 py-4 space-y-4 text-sm font-medium max-h-[calc(100dvh-3.5rem)] overflow-y-auto">
+            {MOBILE_NAV_SECTIONS.map((section, i) => (
+              <div key={section.label ?? `top-${i}`} className="space-y-1">
+                {section.label && (
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-semibold pt-1">
+                    {section.label}
+                  </p>
+                )}
+                {section.items.map(item => (
+                  <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
+                    className={`block py-1.5 ${isActive(item.href) ? "text-primary" : "text-muted-foreground"}`}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             ))}
             <div className="flex gap-2 pt-2 border-t">
               {user ? (

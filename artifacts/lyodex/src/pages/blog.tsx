@@ -8,7 +8,7 @@ import { useLanguage } from "@/lib/i18n";
 import { LockGate } from "@/components/LockGate";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { format } from "date-fns";
-import { Calendar, Clock, Search, User, X } from "lucide-react";
+import { Calendar, Clock, Search, User, X, Check } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -51,8 +51,7 @@ function CategoryBadge({ category }: { category: string | null }) {
 }
 
 export default function Blog() {
-  const [email, setEmail] = useState("");
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const b = t.blog;
   const { blog_locked } = useSiteSettings();
 
@@ -60,6 +59,31 @@ export default function Blog() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [email, setEmail] = useState("");
+  const [subscribeState, setSubscribeState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [subscribeMessage, setSubscribeMessage] = useState("");
+
+  // This form used to be inert — no handler, no route, no table. Every address
+  // anyone typed was silently discarded on submit.
+  async function handleSubscribe(e: React.FormEvent) {
+    e.preventDefault();
+    setSubscribeState("sending");
+    try {
+      const res = await fetch(`${BASE}/api/newsletter/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "blog", locale }),
+      });
+      const body = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+      if (!res.ok) throw new Error(body?.error ?? "failed");
+      setSubscribeMessage(body?.message ?? "");
+      setSubscribeState("done");
+    } catch (err) {
+      setSubscribeMessage(err instanceof Error && err.message !== "failed" ? err.message : b.subscribeError);
+      setSubscribeState("error");
+    }
+  }
 
   useEffect(() => {
     if (blog_locked) {
@@ -95,17 +119,40 @@ export default function Blog() {
 
         <section className="bg-primary py-5 px-4">
           <div className="container mx-auto flex flex-col sm:flex-row items-center gap-4 justify-between max-w-3xl">
-            <p className="text-primary-foreground text-sm font-medium">{b.newsletterText}</p>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Input
-                type="email"
-                placeholder={b.emailPlaceholder}
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="bg-white text-foreground h-9 text-sm w-48"
-              />
-              <Button variant="secondary" className="h-9 text-sm font-semibold shrink-0">{b.subscribe}</Button>
+            <div className="text-primary-foreground text-sm">
+              <p className="font-medium">{b.newsletterText}</p>
+              {subscribeState === "done" && (
+                <p className="text-xs mt-1 opacity-90">{subscribeMessage}</p>
+              )}
+              {subscribeState === "error" && (
+                <p className="text-xs mt-1 text-red-100">{subscribeMessage}</p>
+              )}
             </div>
+            {subscribeState === "done" ? (
+              <div className="flex items-center gap-2 text-primary-foreground text-sm font-semibold shrink-0">
+                <Check className="w-4 h-4" /> {b.subscribed}
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex gap-2 w-full sm:w-auto">
+                <Input
+                  type="email"
+                  required
+                  placeholder={b.emailPlaceholder}
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  disabled={subscribeState === "sending"}
+                  className="bg-white text-foreground h-9 text-sm w-48"
+                />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  disabled={subscribeState === "sending"}
+                  className="h-9 text-sm font-semibold shrink-0"
+                >
+                  {subscribeState === "sending" ? b.subscribing : b.subscribe}
+                </Button>
+              </form>
+            )}
           </div>
         </section>
 

@@ -108,7 +108,6 @@ export default function Operators() {
               key={op.id}
               op={op}
               viewDetailsLabel={o.viewDetails}
-              availableLabel={o.available}
               capacityLabel={o.capacity}
               priceLabel={o.price}
               certsVerifiedLabel={o.certsVerified}
