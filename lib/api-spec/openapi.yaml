@@ -1194,6 +1194,12 @@ components:
           type: ["boolean", "null"]
         contact_page_url:
           type: ["string", "null"]
+        gps_lat:
+          type: ["number", "null"]
+          description: Approximate latitude, city level. Not the exact facility address.
+        gps_lng:
+          type: ["number", "null"]
+          description: Approximate longitude, city level. Not the exact facility address.
 
     OperatorInput:
       type: object

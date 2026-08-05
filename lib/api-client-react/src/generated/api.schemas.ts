@@ -54,6 +54,16 @@ export interface Operator {
   pharmaceutical_focus?: boolean | null;
   /** @nullable */
   contact_page_url?: string | null;
+  /**
+     * Approximate latitude, city level. Not the exact facility address.
+     * @nullable
+     */
+  gps_lat?: number | null;
+  /**
+     * Approximate longitude, city level. Not the exact facility address.
+     * @nullable
+     */
+  gps_lng?: number | null;
 }
 
 export interface OperatorInput {
