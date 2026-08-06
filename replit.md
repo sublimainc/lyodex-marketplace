@@ -117,7 +117,7 @@ Machinery listings follow the same principle: `POST /api/machinery` creates a
 
 Two complementary safeguards keep the live database in sync with the Drizzle schema:
 
-1. **Post-merge script** (`scripts/post-merge.sh`) — runs `drizzle-kit push --force` automatically after every task merge so new tables/columns are applied before the server restarts. This is the primary protection.
+1. **Post-merge script** (`scripts/hooks/post-merge.sh`) — runs `drizzle-kit push --force` automatically after every task merge so new tables/columns are applied before the server restarts. This is the primary protection.
 
 2. **Startup schema check** (`artifacts/api-server/src/lib/schemaCheck.ts`) — on every server boot, queries `information_schema.tables` and logs a `WARN` for any tables in the Drizzle schema that are absent from the database. The server still starts (non-fatal), but the drift is clearly visible in logs. To fix: `pnpm --filter @workspace/db run push-force`.
 
@@ -165,7 +165,7 @@ including the portable replacements for the Replit-managed integrations
 | `DATABASE_URL` | PostgreSQL connection string — set ✓ (Replit-managed DB) |
 | `STRIPE_SECRET_KEY` | Set via the Stripe integration in the Integrations tab |
 | `STRIPE_PUBLISHABLE_KEY` | Set via the Stripe integration |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signing secret — **dev**: run `node scripts/register-stripe-webhook.mjs`; **prod**: run `node scripts/register-stripe-webhook-prod.mjs` after deploying to lyodex.com |
+| `STRIPE_WEBHOOK_SECRET` | Webhook signing secret — **dev**: run `node scripts/stripe/register-stripe-webhook.mjs`; **prod**: run `node scripts/stripe/register-stripe-webhook-prod.mjs` after deploying to lyodex.com |
 | `STRIPE_CONNECT_WEBHOOK_SECRET` | Connect thin-event webhook secret — register `/api/stripe/connect-webhook` in Stripe Dashboard → Webhooks → Connected accounts (payload style: Thin, events: `v2.core.account[requirements].updated`, `v2.core.account[.recipient].capability_status_updated`) |
 | `SMTP_HOST` | SMTP server hostname (e.g. `smtp.gmail.com`, `smtp.sendgrid.net`) |
 | `SMTP_PORT` | SMTP port — `587` (STARTTLS, default) or `465` (SSL) |
@@ -191,7 +191,7 @@ including the portable replacements for the Replit-managed integrations
 
 4. **Register the production Stripe webhook** (first deploy only, or after a domain change):
    ```
-   node scripts/register-stripe-webhook-prod.mjs
+   node scripts/stripe/register-stripe-webhook-prod.mjs
    ```
    Copy the printed signing secret into Replit Secrets as `STRIPE_WEBHOOK_SECRET`.
    The script targets `https://lyodex.com/api/stripe/fee-webhook` and is idempotent —
@@ -205,7 +205,7 @@ including the portable replacements for the Replit-managed integrations
 
 6. **Verify the Stripe webhook** (run after step 4 and DNS resolves):
    ```
-   node scripts/verify-stripe-webhook.mjs
+   node scripts/stripe/verify-stripe-webhook.mjs
    ```
    This script checks:
    - The webhook URL is registered in Stripe and set to `enabled`

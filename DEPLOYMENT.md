@@ -102,8 +102,8 @@ since Stripe cannot reach them.
 Helper scripts:
 
 ```bash
-PROD_DOMAIN=your-domain.com node scripts/register-stripe-webhook-prod.mjs
-PROD_DOMAIN=your-domain.com node scripts/verify-stripe-webhook.mjs
+PROD_DOMAIN=your-domain.com node scripts/stripe/register-stripe-webhook-prod.mjs
+PROD_DOMAIN=your-domain.com node scripts/stripe/verify-stripe-webhook.mjs
 ```
 
 ---

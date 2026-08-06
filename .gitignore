@@ -37,5 +37,5 @@ Thumbs.db
 # Le depot est public : ne jamais commiter ceci.
 QUESTIONNAIRE.md
 
-# Raw upstream catalogues re-fetchable with scripts/fd-fetch-catalogs.mjs
+# Raw upstream catalogues re-fetchable with scripts/market-research/fd-crawl.mjs
 data/market-research/catalog-cache/
