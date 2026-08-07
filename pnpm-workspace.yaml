@@ -47,7 +47,12 @@ onlyBuiltDependencies:
 
 overrides:
   postcss: '>=8.5.10'
-  uuid: '>=9.0.0'
+  # This is the only override list pnpm reads. package.json used to carry a
+  # second `pnpm.overrides` block pinning uuid to >=11.1.1, which modern pnpm
+  # silently ignores — so every install rewrote the lockfile and flipped this
+  # value back and forth. The stricter bound is kept here and the dead block
+  # was removed from package.json, leaving one source of truth.
+  uuid: '>=11.1.1'
   fast-uri: '>=3.1.1'
   brace-expansion: '>=5.0.6'
   nodemailer: '>=8.0.0'

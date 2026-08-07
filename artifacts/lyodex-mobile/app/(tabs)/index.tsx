@@ -1,7 +1,7 @@
-import { useGetDashboardSummary, useGetRecentActivity } from "@workspace/api-client-react";
+import { getBaseUrl, useGetDashboardSummary, useGetRecentActivity } from "@workspace/api-client-react";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -23,12 +23,17 @@ const HOW_IT_WORKS_STEPS = [
   { n: "3", icon: "check-circle" as const, title: "Select & Contract", desc: "Accept the best bid. Payments are held in escrow." },
 ];
 
-const MARKET_KPIS = [
-  { label: "Avg food-grade price", value: "$9.40/kg", trend: "+4.2% vs last month", up: true },
-  { label: "Avg GMP-grade price", value: "$28.20/kg", trend: "+2% vs last month", up: true },
-  { label: "Active operators", value: "22", trend: "7 available now", up: true },
-  { label: "Avg response time", value: "38h", trend: "−8% vs 3 months ago", up: false },
-];
+// Live platform counters from GET /api/market/analytics. A null price means
+// the aggregate is withheld (too few distinct operators to publish safely) and
+// must render as "—" rather than a stand-in number.
+interface MarketPlatformStats {
+  total_operators: number;
+  available_operators: number;
+  total_requests: number;
+  total_quotes: number;
+  avg_quoted_price: number | null;
+  avg_turnaround_days: number | null;
+}
 
 function StatCard({
   label,
@@ -62,6 +67,27 @@ export default function HomeScreen() {
 
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: activity, isLoading: loadingActivity } = useGetRecentActivity();
+
+  const [market, setMarket] = useState<MarketPlatformStats | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${getBaseUrl()}/api/market/analytics`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: { platform: MarketPlatformStats }) => { if (!cancelled) setMarket(d.platform); })
+      .catch(() => { /* cards fall back to "—"; never invent a number */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const marketKpis = [
+    { label: "Operators listed", value: market ? String(market.total_operators) : null,
+      sub: market ? `${market.available_operators} available now` : "" },
+    { label: "Avg quoted price", value: market?.avg_quoted_price != null ? `$${market.avg_quoted_price.toFixed(2)}/kg` : null,
+      sub: "across all bids" },
+    { label: "RFQs submitted", value: market ? String(market.total_requests) : null,
+      sub: market ? `${market.total_quotes} bids received` : "" },
+    { label: "Avg quoted turnaround", value: market?.avg_turnaround_days != null ? `${market.avg_turnaround_days} days` : null,
+      sub: "across all bids" },
+  ];
 
   const topPad = isWeb ? 67 : insets.top + 16;
   const bottomPad = isWeb ? 34 + 84 : insets.bottom + 90;
@@ -180,11 +206,13 @@ export default function HomeScreen() {
           </Pressable>
         </View>
         <View style={styles.kpiGrid}>
-          {MARKET_KPIS.map((k) => (
+          {marketKpis.map((k) => (
             <View key={k.label} style={[styles.kpiCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.kpiLabel, { color: colors.mutedForeground }]}>{k.label}</Text>
-              <Text style={[styles.kpiValue, { color: colors.primary }]}>{k.value}</Text>
-              <Text style={[styles.kpiTrend, { color: k.up ? colors.success : colors.warning }]}>{k.trend}</Text>
+              <Text style={[styles.kpiValue, { color: colors.primary }]}>{k.value ?? "—"}</Text>
+              <Text style={[styles.kpiTrend, { color: colors.mutedForeground }]}>
+                {k.value ? k.sub : "Not enough data yet"}
+              </Text>
             </View>
           ))}
         </View>

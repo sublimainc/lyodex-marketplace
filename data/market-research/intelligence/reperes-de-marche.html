@@ -1,0 +1,452 @@
+<title>Prix des produits lyophilisés — repères de marché</title>
+<style>
+  :root {
+    --ground:#F6F7F5; --surface:#FFFFFF; --ink:#141A17; --muted:#5F6B64; --faint:#8B958F;
+    --line:#DDE3DE; --line-strong:#C4CDC7; --accent:#0F6E56; --accent-soft:#E3EFEA;
+    --warn:#A8760F; --warn-soft:#FBF3E3;
+    --shadow:0 1px 2px rgba(20,26,23,.05), 0 8px 24px -12px rgba(20,26,23,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#101512; --surface:#171E1A; --ink:#E8EDE9; --muted:#9AA69F; --faint:#6E7A73;
+      --line:#262F29; --line-strong:#384339; --accent:#4FBF9B; --accent-soft:#16302A;
+      --warn:#D9A441; --warn-soft:#2A2113;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#101512; --surface:#171E1A; --ink:#E8EDE9; --muted:#9AA69F; --faint:#6E7A73;
+    --line:#262F29; --line-strong:#384339; --accent:#4FBF9B; --accent-soft:#16302A;
+    --warn:#D9A441; --warn-soft:#2A2113;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"] {
+    --ground:#F6F7F5; --surface:#FFFFFF; --ink:#141A17; --muted:#5F6B64; --faint:#8B958F;
+    --line:#DDE3DE; --line-strong:#C4CDC7; --accent:#0F6E56; --accent-soft:#E3EFEA;
+    --warn:#A8760F; --warn-soft:#FBF3E3;
+    --shadow:0 1px 2px rgba(20,26,23,.05), 0 8px 24px -12px rgba(20,26,23,.12);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 22px 80px; }
+
+  .eyebrow { font-size:.6875rem; font-weight:650; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin:0 0 10px; }
+  h1 { font-family: ui-serif, Georgia, "Times New Roman", serif; font-size:clamp(2rem,4.4vw,2.9rem);
+       font-weight:600; letter-spacing:-.024em; line-height:1.06; margin:0 0 14px; text-wrap:balance; }
+  h2 { font-family: ui-serif, Georgia, "Times New Roman", serif; font-size:1.5rem; font-weight:600;
+       letter-spacing:-.018em; margin:0 0 6px; text-wrap:balance; }
+  h3 { font-size:.9375rem; font-weight:650; margin:0 0 6px; }
+  p { margin:0 0 14px; }
+  .lede { font-size:1.125rem; color:var(--muted); max-width:64ch; }
+  .measure { max-width:68ch; }
+  header.top { padding:48px 0 30px; border-bottom:1px solid var(--line); }
+  section { padding-top:44px; }
+  .sub { color:var(--muted); font-size:.9375rem; margin:0 0 20px; max-width:68ch; }
+
+  /* ── Headline figure ── */
+  .headline { display:flex; flex-wrap:wrap; gap:26px; align-items:flex-end;
+              background:var(--surface); border:1px solid var(--line); border-radius:12px;
+              padding:24px 26px; box-shadow:var(--shadow); margin-top:24px; }
+  .big { font-family: ui-monospace,"Cascadia Mono","Segoe UI Mono",monospace;
+         font-size:3.1rem; font-weight:600; color:var(--accent); line-height:1;
+         letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+  .big small { font-size:.9rem; font-weight:500; color:var(--faint); letter-spacing:.02em; }
+  .headline dl { display:flex; gap:26px; margin:0; flex-wrap:wrap; }
+  .headline dt { font-size:.6875rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-bottom:2px; }
+  .headline dd { margin:0; font-family: ui-monospace,"Cascadia Mono",monospace; font-size:1.25rem;
+                 font-weight:600; font-variant-numeric:tabular-nums; }
+
+  /* ── Tables ── */
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow); }
+  table { border-collapse:collapse; width:100%; font-size:.875rem; }
+  th { text-align:left; font-size:.6875rem; letter-spacing:.07em; text-transform:uppercase;
+       color:var(--faint); font-weight:650; padding:11px 13px; white-space:nowrap;
+       border-bottom:1px solid var(--line-strong); }
+  th.n, td.n { text-align:right; }
+  td { padding:10px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:last-child td { border-bottom:0; }
+  tbody tr:hover { background:var(--accent-soft); }
+  td.n { font-family: ui-monospace,"Cascadia Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .med { font-weight:700; color:var(--accent); font-size:.9375rem; }
+  .name { font-weight:600; }
+
+  .flag { display:inline-block; font-size:.625rem; font-weight:650; text-transform:uppercase;
+          letter-spacing:.04em; padding:1px 6px; border-radius:999px; margin-left:6px; white-space:nowrap;
+          border:1px solid; cursor:help; }
+  .flag-high { color:var(--warn); background:var(--warn-soft); border-color:var(--warn); }
+  .flag-mid  { color:var(--muted); background:var(--ground); border-color:var(--line-strong); }
+  .flag-thin { color:var(--faint); background:transparent; border-color:var(--line-strong); border-style:dashed; }
+
+  /* ── Volume chart ── */
+  .chart { background:var(--surface); border:1px solid var(--line); border-radius:12px;
+           padding:24px 26px 20px; box-shadow:var(--shadow); }
+  .bars { display:flex; align-items:flex-end; gap:14px; height:230px; margin-bottom:14px; }
+  .barcol { flex:1; display:flex; flex-direction:column; justify-content:flex-end; height:100%; gap:8px; text-align:center; }
+  .bar { width:100%; background:var(--accent); border-radius:6px 6px 0 0; position:relative; min-height:3px; }
+  .bar.trough { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .bar.rebound { background:var(--warn); }
+  .barval { font-family: ui-monospace,"Cascadia Mono",monospace; font-size:.8125rem; font-weight:650;
+            font-variant-numeric:tabular-nums; }
+  .barlab { font-size:.75rem; color:var(--muted); line-height:1.3; }
+  .barlab b { display:block; color:var(--ink); font-weight:600; font-size:.8125rem; }
+  .barn { font-size:.6875rem; color:var(--faint); }
+
+  /* ── Findings ── */
+  .finding { background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--accent);
+             border-radius:10px; padding:18px 22px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .finding.caution { border-left-color:var(--warn); }
+  .finding p:last-child { margin-bottom:0; }
+  .finding .measure { max-width:70ch; }
+
+  .note { background:var(--ground); border:1px solid var(--line); border-radius:10px;
+          padding:16px 20px; font-size:.875rem; color:var(--muted); }
+  .note strong { color:var(--ink); }
+
+  footer { margin-top:52px; padding-top:22px; border-top:1px solid var(--line);
+           color:var(--muted); font-size:.8125rem; max-width:74ch; }
+
+  @media (max-width:640px) {
+    .bars { height:180px; gap:7px; }
+    .barlab { font-size:.625rem; }
+    .big { font-size:2.4rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">LyoDex · repères de marché</p>
+    <h1>Ce que se vendent les produits lyophilisés</h1>
+    <p class="lede">
+      Relevé des catalogues publics de 67 marchands dans
+      7 pays. Chaque prix et chaque poids vient de la fiche du marchand
+      lui-même, à la date du 2026-08-05.
+    </p>
+
+    <div class="headline">
+      <div>
+        <div class="big">145 <small>$ CA / kg</small></div>
+        <p style="margin:8px 0 0;font-size:.8125rem;color:var(--muted)">
+          Prix médian, toutes catégories
+        </p>
+      </div>
+      <dl>
+        <div><dt>La moitié se situe entre</dt><dd>95 – 223 $</dd></div>
+        <div><dt>Moyenne</dt><dd>180 $</dd></div>
+        <div><dt>Le moins cher</dt><dd>11 $</dd></div>
+        <div><dt>Le plus cher</dt><dd>1 000 $</dd></div>
+        <div><dt>Observations</dt><dd>926</dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <section>
+    <h2>Trois choses que ces chiffres disent</h2>
+    <p class="sub">Et une qu'ils ne disent pas.</p>
+
+    <div class="finding">
+      <h3>Le gros format cesse de payer vers 150 g</h3>
+      <p class="measure">
+        Le prix au kilo chute de <strong>257 $</strong> pour les portions
+        de moins de 50 g à <strong>111 $</strong> pour la tranche
+        150 à 500 g — une baisse de 56.9 %. Puis la courbe
+        s'arrête de descendre : au-delà, le prix au kilo remonte même légèrement
+        (145 $ pour les formats de plus de 2 kg).
+      </p>
+      <p class="measure">
+        Le même calcul sur les fruits seuls, où les produits sont comparables entre eux, donne
+        la même forme : 343 $ → 143 $ (−58.4 %),
+        puis 162 $. Ce n'est donc pas un artefact de mélange de produits.
+      </p>
+    </div>
+
+    <div class="finding">
+      <h3>Aucun écart de prix notable entre le Canada et les États-Unis</h3>
+      <p class="measure">
+        Canada : <strong>166 $/kg</strong> (217 observations, 11 marchands) · États-Unis : <strong>169 $/kg</strong> (336 observations, 17 marchands).
+        L'écart entre les deux médianes est inférieur à 2 %, ce qui est du bruit à cette taille
+        d'échantillon. Un producteur canadien n'a pas de désavantage de prix affiché face au marché
+        américain.
+      </p>
+    </div>
+
+    <div class="finding caution">
+      <h3>La moyenne trompe dans plusieurs catégories</h3>
+      <p class="measure">
+        En légumes, la moyenne dépasse la médiane de 74 %; en œufs, de 88 %. Quelques produits
+        de niche très chers tirent la moyenne vers le haut alors que la majorité des produits se
+        vendent bien moins cher. <strong>Fiez-vous à la médiane</strong>, et à l'intervalle du
+        premier au troisième quartile, qui décrit où se situe la moitié centrale du marché.
+      </p>
+    </div>
+
+    <div class="note measure">
+      <strong>Ce que ces chiffres ne disent pas :</strong> ce sont des prix de <em>produits finis
+      vendus au détail</em>. Ils ne constituent pas un tarif de lyophilisation à façon. Un
+      producteur qui fait sécher la matière d'un client vend un service, dont le prix se négocie
+      au volume, à la difficulté du cycle et à l'exigence de certification — pas au prix de détail
+      du sachet qui en sortira.
+    </div>
+  </section>
+
+  <section>
+    <h2>Prix au kilo selon le format</h2>
+    <p class="sub">
+      Médiane en dollars canadiens. La barre en creux marque le format le plus avantageux;
+      la barre ambrée signale que la courbe remonte au lieu de continuer à baisser.
+    </p>
+    <div class="chart">
+      <div class="bars">
+        <div class="barcol">
+            <div class="barval">257 $</div>
+            <div class="bar" style="height:100.0%"></div>
+            <div class="barlab"><b>Moins de 50 g</b>Portion unique, échantillon</div>
+            <div class="barn">105 obs. · 16 marchands</div>
+          </div><div class="barcol">
+            <div class="barval">158 $</div>
+            <div class="bar" style="height:61.5%"></div>
+            <div class="barlab"><b>50 à 150 g</b>Sachet de détail courant</div>
+            <div class="barn">302 obs. · 23 marchands</div>
+          </div><div class="barcol">
+            <div class="barval">111 $</div>
+            <div class="bar trough" style="height:43.1%"></div>
+            <div class="barlab"><b>150 à 500 g</b>Grand format de détail</div>
+            <div class="barn">197 obs. · 18 marchands</div>
+          </div><div class="barcol">
+            <div class="barval">120 $</div>
+            <div class="bar" style="height:46.6%"></div>
+            <div class="barlab"><b>500 g à 2 kg</b>Format familial, boîte</div>
+            <div class="barn">224 obs. · 15 marchands</div>
+          </div><div class="barcol">
+            <div class="barval">145 $</div>
+            <div class="bar rebound" style="height:56.4%"></div>
+            <div class="barlab"><b>Plus de 2 kg</b>Vrac, gros contenant</div>
+            <div class="barn">98 obs. · 8 marchands</div>
+          </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Prix au kilo par catégorie</h2>
+    <p class="sub">
+      Toutes les valeurs en dollars canadiens par kilogramme. Une catégorie n'apparaît que si au
+      moins trois marchands distincts la soutiennent.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Catégorie</th>
+            <th class="n">Obs.</th>
+            <th class="n">Marchands</th>
+            <th class="n">Le moins cher</th>
+            <th class="n">1<sup>er</sup> quartile</th>
+            <th class="n">Médiane</th>
+            <th class="n">Moyenne</th>
+            <th class="n">3<sup>e</sup> quartile</th>
+            <th class="n">Le plus cher</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="name">Confiseries</span></td>
+            <td class="n">249</td>
+            <td class="n">15</td>
+            <td class="n">43,63</td>
+            <td class="n">112,66</td>
+            <td class="n med">166,56</td>
+            <td class="n">174,62</td>
+            <td class="n">243,13</td>
+            <td class="n">464,82</td>
+          </tr><tr>
+            <td><span class="name">Fruits</span><span class="flag flag-mid" title="La moyenne dépasse la médiane de 28.1 %">asymétrique</span></td>
+            <td class="n">242</td>
+            <td class="n">23</td>
+            <td class="n">54,21</td>
+            <td class="n">125,59</td>
+            <td class="n med">177,75</td>
+            <td class="n">227,67</td>
+            <td class="n">268,99</td>
+            <td class="n">741,41</td>
+          </tr><tr>
+            <td><span class="name">Autres</span><span class="flag flag-mid" title="La moyenne dépasse la médiane de 22.1 %">asymétrique</span></td>
+            <td class="n">172</td>
+            <td class="n">10</td>
+            <td class="n">11,32</td>
+            <td class="n">79,36</td>
+            <td class="n med">97,50</td>
+            <td class="n">119,04</td>
+            <td class="n">137,20</td>
+            <td class="n">287,50</td>
+          </tr><tr>
+            <td><span class="name">Repas complets</span><span class="flag flag-mid" title="La moyenne dépasse la médiane de 26.9 %">asymétrique</span></td>
+            <td class="n">58</td>
+            <td class="n">8</td>
+            <td class="n">41,07</td>
+            <td class="n">104,30</td>
+            <td class="n med">126,38</td>
+            <td class="n">160,37</td>
+            <td class="n">157,95</td>
+            <td class="n">589,07</td>
+          </tr><tr>
+            <td><span class="name">Viandes</span></td>
+            <td class="n">55</td>
+            <td class="n">7</td>
+            <td class="n">28,69</td>
+            <td class="n">147,84</td>
+            <td class="n med">175,68</td>
+            <td class="n">189,53</td>
+            <td class="n">202,21</td>
+            <td class="n">580,61</td>
+          </tr><tr>
+            <td><span class="name">Légumes</span><span class="flag flag-high" title="La moyenne dépasse la médiane de 74.1 % — quelques produits chers tirent la moyenne">très asymétrique</span></td>
+            <td class="n">45</td>
+            <td class="n">14</td>
+            <td class="n">29,36</td>
+            <td class="n">90,66</td>
+            <td class="n med">161,39</td>
+            <td class="n">280,99</td>
+            <td class="n">346,66</td>
+            <td class="n">1 000,00</td>
+          </tr><tr>
+            <td><span class="name">Produits laitiers</span><span class="flag flag-mid" title="La moyenne dépasse la médiane de 25.9 %">asymétrique</span></td>
+            <td class="n">34</td>
+            <td class="n">7</td>
+            <td class="n">65,52</td>
+            <td class="n">98,78</td>
+            <td class="n med">140,39</td>
+            <td class="n">176,72</td>
+            <td class="n">171,15</td>
+            <td class="n">962,80</td>
+          </tr><tr>
+            <td><span class="name">Boissons</span></td>
+            <td class="n">30</td>
+            <td class="n">3</td>
+            <td class="n">39,99</td>
+            <td class="n">40,40</td>
+            <td class="n med">61,42</td>
+            <td class="n">66,10</td>
+            <td class="n">73,72</td>
+            <td class="n">173,83</td>
+          </tr><tr>
+            <td><span class="name">Poudres</span></td>
+            <td class="n">18</td>
+            <td class="n">5</td>
+            <td class="n">48,87</td>
+            <td class="n">66,29</td>
+            <td class="n med">124,56</td>
+            <td class="n">129,97</td>
+            <td class="n">153,02</td>
+            <td class="n">415,01</td>
+          </tr><tr>
+            <td><span class="name">Herbes et épices</span><span class="flag flag-thin" title="Seulement 10 observations — à lire comme un ordre de grandeur">peu de données</span></td>
+            <td class="n">10</td>
+            <td class="n">3</td>
+            <td class="n">80,59</td>
+            <td class="n">90,00</td>
+            <td class="n med">90,80</td>
+            <td class="n">107,22</td>
+            <td class="n">135,00</td>
+            <td class="n">135,00</td>
+          </tr><tr>
+            <td><span class="name">Œufs</span><span class="flag flag-high" title="La moyenne dépasse la médiane de 87.9 % — quelques produits chers tirent la moyenne">très asymétrique</span><span class="flag flag-thin" title="Seulement 7 observations — à lire comme un ordre de grandeur">peu de données</span></td>
+            <td class="n">7</td>
+            <td class="n">4</td>
+            <td class="n">80,00</td>
+            <td class="n">149,91</td>
+            <td class="n med">156,95</td>
+            <td class="n">294,90</td>
+            <td class="n">371,52</td>
+            <td class="n">784,52</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Fruits, par format</h2>
+    <p class="sub">
+      La catégorie la mieux documentée, détaillée par taille d'emballage. Une médiane unique pour
+      « les fruits » masquerait un écart du simple au double entre un sachet-collation et un
+      grand format.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Format</th>
+            <th class="n">Obs.</th>
+            <th class="n">Marchands</th>
+            <th class="n">1<sup>er</sup> quartile</th>
+            <th class="n">Médiane</th>
+            <th class="n">Moyenne</th>
+            <th class="n">3<sup>e</sup> quartile</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="name">Moins de 50 g</span></td>
+            <td class="n">34</td>
+            <td class="n">10</td>
+            <td class="n">204,13</td>
+            <td class="n med">342,50</td>
+            <td class="n">343,44</td>
+            <td class="n">491,67</td>
+          </tr><tr>
+            <td><span class="name">50 à 150 g</span></td>
+            <td class="n">55</td>
+            <td class="n">13</td>
+            <td class="n">143,09</td>
+            <td class="n med">193,25</td>
+            <td class="n">319,80</td>
+            <td class="n">500,00</td>
+          </tr><tr>
+            <td><span class="name">150 à 500 g</span></td>
+            <td class="n">53</td>
+            <td class="n">6</td>
+            <td class="n">112,74</td>
+            <td class="n med">142,50</td>
+            <td class="n">174,92</td>
+            <td class="n">219,81</td>
+          </tr><tr>
+            <td><span class="name">500 g à 2 kg</span></td>
+            <td class="n">73</td>
+            <td class="n">8</td>
+            <td class="n">120,00</td>
+            <td class="n med">142,50</td>
+            <td class="n">165,23</td>
+            <td class="n">202,94</td>
+          </tr><tr>
+            <td><span class="name">Plus de 2 kg</span></td>
+            <td class="n">27</td>
+            <td class="n">5</td>
+            <td class="n">106,03</td>
+            <td class="n med">162,13</td>
+            <td class="n">166,58</td>
+            <td class="n">223,25</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      <strong>Méthode.</strong> Prix de détail relevés dans les catalogues publics des marchands. Seules les lignes dont le marchand publie lui-même le poids net sont comptées. Les prix en devises étrangères sont convertis en dollars canadiens au taux du 2026-08-05. Ce sont des prix de produits finis vendus au détail — pas un tarif de lyophilisation à façon, qui est un prix de service.
+    </p>
+    <p>
+      5 440 lignes ont été relevées;
+      926 servent aux chiffres ci-dessus. L'écart tient
+      aux marchands qui ne publient pas le poids net de leurs produits : sans poids, aucun prix au
+      kilo ne peut être calculé, et une estimation aurait été une invention. Taux de change du
+      2026-08-05. Relevé du 2026-08-05.
+    </p>
+  </footer>
+</div>

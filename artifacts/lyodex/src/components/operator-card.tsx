@@ -80,11 +80,11 @@ export function OperatorCard({
               </span>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            {op.available && !isMachinery && !isIngredient ? (
-              <Badge variant="default" className="bg-emerald-600 text-[10px]">{availableLabel}</Badge>
-            ) : null}
-          </div>
+          {/* No availability badge. LyoDex has no way to know whether a company
+              is taking work this week, and `available = false` conflates "the
+              operator told us they are full" with "nobody has told us anything".
+              Availability is the operator's to state, in their own words, when
+              they respond to a request. */}
         </div>
         <div className="flex flex-wrap gap-1.5 mt-2">
           <Badge className={`border text-[10px] px-1.5 py-0.5 ${verif.className}`}>

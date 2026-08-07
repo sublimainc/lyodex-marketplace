@@ -1,41 +1,44 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { usePageViews } from "@/hooks/usePageViews";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
-import NotFound from "@/pages/not-found";
+import NotFound from "@/pages/public/not-found";
 
 import { Layout } from "@/components/Layout";
-import Home from "@/pages/home";
-import Operators from "@/pages/operators";
-import OperatorProfile from "@/pages/operator-profile";
-import CreateRequest from "@/pages/create-request";
-import Requests from "@/pages/requests";
-import RequestDetails from "@/pages/request-details";
-import Dashboard from "@/pages/dashboard";
-import OperatorListings from "@/pages/operator-listings";
-import Shop from "@/pages/shop";
-import Login from "@/pages/login";
-import Register from "@/pages/register";
-import HowItWorks from "@/pages/how-it-works";
-import Pricing from "@/pages/pricing";
-import AdminPanel from "@/pages/admin";
-import Machinery from "@/pages/machinery";
-import MachineryListingForm from "@/pages/machinery-listing-form";
-import OperatorMap from "@/pages/operator-map";
-import MarketIntelligence from "@/pages/market-intelligence";
-import Blog from "@/pages/blog";
-import BlogPost from "@/pages/blog-post";
-import ProductMarket from "@/pages/product-market";
-import ProductMarketDetail from "@/pages/product-market-detail";
-import ProductMarketListForm from "@/pages/product-market-list";
-import Trust from "@/pages/trust";
-import ForgotPassword from "@/pages/forgot-password";
-import ResetPassword from "@/pages/reset-password";
-import Settings from "@/pages/settings";
-import Manufacturers from "@/pages/manufacturers";
-import ManufacturerProfile from "@/pages/manufacturer-profile";
+import Home from "@/pages/public/home";
+import Operators from "@/pages/marketplace/operators";
+import OperatorProfile from "@/pages/marketplace/operator-profile";
+import CreateRequest from "@/pages/requests/create-request";
+import Requests from "@/pages/requests/requests";
+import RequestDetails from "@/pages/requests/request-details";
+import Dashboard from "@/pages/account/dashboard";
+import OperatorListings from "@/pages/account/operator-listings";
+import Shop from "@/pages/marketplace/shop";
+import Login from "@/pages/account/login";
+import Register from "@/pages/account/register";
+import HowItWorks from "@/pages/public/how-it-works";
+import Pricing from "@/pages/public/pricing";
+import AdminPanel from "@/pages/admin/admin";
+import Machinery from "@/pages/marketplace/machinery";
+import MachineryListingForm from "@/pages/marketplace/machinery-listing-form";
+import OperatorMap from "@/pages/marketplace/operator-map";
+import MarketIntelligence from "@/pages/insights/market-intelligence";
+import Seasonality from "@/pages/insights/seasonality";
+import Faq from "@/pages/insights/faq";
+import Blog from "@/pages/insights/blog";
+import BlogPost from "@/pages/insights/blog-post";
+import ProductMarket from "@/pages/marketplace/product-market";
+import ProductMarketDetail from "@/pages/marketplace/product-market-detail";
+import ProductMarketListForm from "@/pages/marketplace/product-market-list";
+import Trust from "@/pages/insights/trust";
+import ForgotPassword from "@/pages/account/forgot-password";
+import ResetPassword from "@/pages/account/reset-password";
+import Settings from "@/pages/account/settings";
+import Manufacturers from "@/pages/marketplace/manufacturers";
+import ManufacturerProfile from "@/pages/marketplace/manufacturer-profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +50,10 @@ const queryClient = new QueryClient({
 });
 
 function Router() {
+  // Records a page view on every route change. Without this the platform_events
+  // table stayed empty and the admin panel had no traffic figures at all.
+  usePageViews();
+
   return (
     <Layout>
       <Switch>
@@ -68,6 +75,8 @@ function Router() {
         <Route path="/machinery/list" component={MachineryListingForm} />
         <Route path="/operator-map" component={OperatorMap} />
         <Route path="/market-intelligence" component={MarketIntelligence} />
+        <Route path="/seasonality" component={Seasonality} />
+        <Route path="/faq" component={Faq} />
         <Route path="/blog" component={Blog} />
         <Route path="/blog/:slug" component={BlogPost} />
         <Route path="/product-market/list" component={ProductMarketListForm} />

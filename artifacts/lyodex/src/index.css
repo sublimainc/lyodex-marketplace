@@ -1,4 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Two families, each doing one job.
+   Source Serif 4 carries headings: it reads as a publication rather than an
+   app, which is the right signal for a platform whose product is market data.
+   Inter stays for interface and body — it is built for small sizes on screen,
+   which is what tables, forms and labels need.
+   `display=swap` so text is legible while the fonts load. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -58,6 +64,7 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
   --font-sans: var(--app-font-sans);
+  --font-display: var(--app-font-display);
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
@@ -114,9 +121,10 @@
   --chart-4: 60 3% 80%;
   --chart-5: 161 69% 37%;
 
-  --app-font-sans: 'Inter', sans-serif;
-  --app-font-serif: Georgia, serif;
-  --app-font-mono: Menlo, monospace;
+  --app-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --app-font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --app-font-serif: 'Source Serif 4', Georgia, serif;
+  --app-font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
   --radius: 0.25rem;
   
   --shadow-2xs: 0px 1px 2px rgba(0,0,0,0.05);
@@ -185,6 +193,38 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Headings carry the serif. Applied here rather than class-by-class so the
+     whole site shifts at once and no page can drift back to all-Inter. */
+  h1, h2, h3, h4 {
+    font-family: var(--app-font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    /* Keeps two-line headings from breaking with one orphaned word. */
+    text-wrap: balance;
+  }
+
+  h1 { letter-spacing: -0.025em; line-height: 1.12; }
+  h2 { line-height: 1.2; }
+
+  /* Body copy is easier to read when a line stops around 70 characters.
+     Opt in with .prose-measure rather than forcing it on every container. */
+  .prose-measure { max-width: 68ch; }
+
+  /* Digits in tables and stat tiles should line up in columns. Inter supports
+     tabular figures; without this, 1 is narrower than 8 and rows look ragged. */
+  table, .tabular, [data-tabular] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Small uppercase labels need air or they read as a solid block. */
+  .eyebrow {
+    font-family: var(--app-font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 }
 

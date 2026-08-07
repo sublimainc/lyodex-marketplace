@@ -28,6 +28,7 @@ import { logger } from "./logger";
 import { db } from "@workspace/db";
 import { systemAlertsTable } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
+import { getPublicBaseUrl } from "./publicUrl";
 
 const CONNECT_WEBHOOK_PATH = "/api/stripe/connect-webhook";
 const CONNECT_MISSING_ALERT_KEY = "stripe_connect_webhook_missing";
@@ -128,14 +129,21 @@ async function upsertConnectWebhookUpdateFailedAlert(
 }
 
 export async function syncStripeConnectWebhook(stripe: Stripe): Promise<void> {
-  const rawDomains = process.env.REPLIT_DOMAINS;
-  if (!rawDomains) {
-    logger.debug("REPLIT_DOMAINS not set — skipping Stripe Connect webhook sync");
+  // Auto-registration only makes sense against a real public origin; a
+  // localhost base URL would register an endpoint Stripe can never reach.
+  let baseUrl: string;
+  try {
+    baseUrl = getPublicBaseUrl();
+  } catch {
+    logger.debug("Public base URL unavailable — skipping Stripe Connect webhook sync");
+    return;
+  }
+  if (!baseUrl.startsWith("https://")) {
+    logger.debug({ baseUrl }, "Non-HTTPS base URL — skipping Stripe Connect webhook sync");
     return;
   }
 
-  const domain = rawDomains.split(",")[0]!.trim();
-  const expectedUrl = `https://${domain}${CONNECT_WEBHOOK_PATH}`;
+  const expectedUrl = `${baseUrl}${CONNECT_WEBHOOK_PATH}`;
 
   let endpoints: Stripe.WebhookEndpoint[];
   try {

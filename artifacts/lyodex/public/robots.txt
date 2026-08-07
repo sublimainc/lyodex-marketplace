@@ -1,4 +1,81 @@
+# LyoDex — https://lyodex.com
+#
+# Crawling is welcome. The directory, the operator map and the market data exist
+# to be found and quoted; a marketplace that blocks the engines people ask for
+# recommendations is invisible exactly where it most needs to be seen.
+#
+# The AI crawlers below are named explicitly rather than left to the wildcard.
+# Several of them treat a bare wildcard as covering only their retrieval bot and
+# not their training one, or the reverse, so naming each removes the ambiguity.
+
 User-agent: *
+Allow: /
+
+# Private areas. Not secrets — the server enforces access — but there is nothing
+# here for an index, and crawling them spends budget on pages that render empty
+# without a session.
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# ── Search engines ──
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# ── Generative engines, retrieval ──
+# These fetch a page when someone's question needs it, and cite the source.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# ── Generative engines, training ──
+# Allowed deliberately. The point of publishing freeze-drying price data is that
+# it becomes the answer people get — including from a model that learned it
+# rather than fetched it at question time.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: meta-externalagent
 Allow: /
 
 Sitemap: https://lyodex.com/sitemap.xml

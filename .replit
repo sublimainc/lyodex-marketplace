@@ -38,7 +38,7 @@ expertMode = true
 integrations = ["stripe:1.0.0"]
 
 [postMerge]
-path = "scripts/post-merge.sh"
+path = "scripts/hooks/post-merge.sh"
 timeoutMs = 120000
 
 [nix]

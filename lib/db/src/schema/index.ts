@@ -20,3 +20,6 @@ export * from "./listing_notifications";
 export * from "./pending_uploads";
 export * from "./machinery_listings";
 export * from "./report_snapshots";
+export * from "./market_observations";
+export * from "./newsletter_subscribers";
+export * from "./product_benchmarks";

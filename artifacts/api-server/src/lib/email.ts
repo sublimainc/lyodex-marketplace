@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { logger } from "./logger";
+import { getPublicBaseUrl } from "./publicUrl";
 
 // ─── Email address constants ──────────────────────────────────────────────────
 // All outbound mail uses one of these four addresses.
@@ -178,8 +179,7 @@ export async function sendNewBidEmail(params: NewBidEmailParams): Promise<void> 
 
   const { transporter, from } = smtpConfig;
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain ? `https://${domain}` : "https://lyodex.com";
+  const baseUrl = getPublicBaseUrl();
   const requestUrl = `${baseUrl}/requests/${params.requestId}`;
 
   const priceFormatted = params.pricePerKg.toLocaleString("en-CA", { style: "currency", currency: "CAD" });
@@ -408,8 +408,7 @@ export async function sendPasswordResetEmail(params: PasswordResetEmailParams): 
 
   const { transporter, from } = smtpConfig;
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain ? `https://${domain}` : "https://lyodex.com";
+  const baseUrl = getPublicBaseUrl();
   const resetUrl = `${baseUrl}/reset-password?token=${params.resetToken}`;
 
   const subject = "LyoDex — Reset your password";
@@ -484,8 +483,7 @@ export async function sendOnboardingIncompleteEmail(params: OnboardingIncomplete
 
   const { transporter, from } = smtpConfig;
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain ? `https://${domain}` : "https://lyodex.com";
+  const baseUrl = getPublicBaseUrl();
   const dashboardUrl = `${baseUrl}/dashboard`;
 
   const contractFormatted = params.contractValue.toLocaleString("en-CA", { style: "currency", currency: "CAD" });
@@ -575,8 +573,7 @@ export async function sendStripeDisconnectedEmail(params: StripeDisconnectedEmai
 
   const { transporter, from } = smtpConfig;
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain ? `https://${domain}` : "https://lyodex.com";
+  const baseUrl = getPublicBaseUrl();
   const dashboardUrl = `${baseUrl}/dashboard`;
 
   const subject = "Action required: your Stripe payout account was disconnected — LyoDex";
@@ -665,8 +662,7 @@ export async function sendListingApprovedEmail(params: ListingApprovedEmailParam
     emailFooterText(),
   ].join("\n");
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain ? `https://${domain}` : "https://lyodex.com";
+  const baseUrl = getPublicBaseUrl();
   const dashboardUrl = `${baseUrl}/dashboard`;
 
   const html = `
@@ -740,8 +736,7 @@ export async function sendListingRejectedEmail(params: ListingRejectedEmailParam
     emailFooterText(),
   ].join("\n");
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain ? `https://${domain}` : "https://lyodex.com";
+  const baseUrl = getPublicBaseUrl();
   const dashboardUrl = `${baseUrl}/dashboard`;
 
   const html = `
@@ -860,8 +855,7 @@ export async function sendScheduledReportEmail(params: ScheduledReportEmailParam
     `<tr><td>${o.name}</td><td>${o.win_rate}%</td><td>${o.won_bids}/${o.total_bids}</td></tr>`
   ).join("");
 
-  const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-  const baseUrl = domain ? `https://${domain}` : "https://lyodex.com";
+  const baseUrl = getPublicBaseUrl();
 
   const html = `
 <!DOCTYPE html>

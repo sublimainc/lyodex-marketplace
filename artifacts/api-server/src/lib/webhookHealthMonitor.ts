@@ -44,7 +44,7 @@ export async function checkWebhookHealth(): Promise<WebhookHealthResult> {
         ok: false,
         secret_loaded: true,
         webhook_url: webhookUrl,
-        message: "Endpoint not found in Stripe. Run scripts/register-stripe-webhook-prod.mjs to register it.",
+        message: "Endpoint not found in Stripe. Run scripts/stripe/register-stripe-webhook-prod.mjs to register it.",
       };
     }
 
@@ -113,7 +113,7 @@ async function runProbe(): Promise<void> {
     result.secret_loaded
       ? "  - Log in to the Stripe Dashboard and verify the webhook endpoint is enabled."
       : "  - Set STRIPE_WEBHOOK_SECRET in the Replit Secrets panel and restart the server.",
-    "  - Run: node scripts/register-stripe-webhook-prod.mjs (if endpoint is missing)",
+    "  - Run: node scripts/stripe/register-stripe-webhook-prod.mjs (if endpoint is missing)",
     "",
     "This alert fires at most once per hour.",
   ]

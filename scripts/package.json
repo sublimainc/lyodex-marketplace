@@ -5,7 +5,13 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "create-admin": "node ./admin/create-admin.mjs",
+    "audit-data": "node ./admin/audit-seed-data.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",

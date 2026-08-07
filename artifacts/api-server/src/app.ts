@@ -9,6 +9,7 @@ import { WebhookHandlers } from "./webhookHandlers";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { recordError } from "./lib/errorMonitor";
+import { resolveFeeRate, calculateFees } from "./lib/fees";
 
 const app: Express = express();
 // Trust the first proxy hop (Replit's reverse proxy / load balancer) so that
@@ -260,10 +261,19 @@ app.post(
             // ── Full state transition: pending_escrow → accepted ─────────────
             // The request is closed here (not in the accept handler) so the
             // marketplace is never locked by an unfunded contract.
-            const { requestsTable, requestMessagesTable, activityTable } = await import("@workspace/db/schema");
+            const { requestsTable, requestMessagesTable, activityTable, priceDataPointsTable, operatorsTable } = await import("@workspace/db/schema");
             const { ne, and: txAnd } = await import("drizzle-orm");
             const contractValue = (session.amount_total ?? (bid.escrow_amount_cents ?? 0)) / 100;
-            const operatorPayout = +(contractValue * 0.91).toFixed(2);
+            // Rate is resolved once here and snapshotted onto the bid below, so
+            // the figure quoted to the operator is the figure they are paid.
+            const [feeOperator] = await db
+              .select({ platform_fee_override: operatorsTable.platform_fee_override })
+              .from(operatorsTable)
+              .where(eq(operatorsTable.id, bid.operator_id))
+              .limit(1);
+            const appliedFeeRate = resolveFeeRate(feeOperator?.platform_fee_override);
+            const contractFees = calculateFees(Math.round(contractValue * 100), appliedFeeRate);
+            const operatorPayout = contractFees.operatorPayout;
 
             await db.transaction(async (tx) => {
               // Idempotent guard: if another bid for this request is already
@@ -285,6 +295,11 @@ app.post(
                 await tx.update(bidsTable)
                   .set({ status: "rejected", escrow_status: "authorized", escrow_payment_intent_id: paymentIntentId })
                   .where(eq(bidsTable.id, bidId));
+                // This bid never became a contract — make sure its price is not
+                // counted as an awarded price in market intelligence.
+                await tx.update(priceDataPointsTable)
+                  .set({ accepted: false, quote_status: "rejected" })
+                  .where(eq(priceDataPointsTable.bid_id, bidId));
                 return; // exit transaction — no further state changes
               }
 
@@ -299,6 +314,24 @@ app.post(
                 escrow_payment_intent_id: paymentIntentId,
                 escrow_amount_cents: session.amount_total ?? bid.escrow_amount_cents,
               }).where(eq(bidsTable.id, bidId));
+
+              // The contract now genuinely exists — escrow is funded and the
+              // request is closed. This is the only place a price may be marked
+              // as an awarded contract price, since it is the only point at
+              // which money has actually moved. Same transaction as the bid
+              // update so the two can never disagree.
+              await tx.update(priceDataPointsTable).set({
+                accepted: true,
+                quote_status: "accepted",
+                updated_at: new Date(),
+              }).where(eq(priceDataPointsTable.bid_id, bidId));
+
+              // Freeze the fee rate onto the contract. Reports and payouts read
+              // this, never the current PLATFORM_FEE_PERCENT, so changing the
+              // rate later cannot rewrite what this contract was charged.
+              await tx.update(bidsTable)
+                .set({ platform_fee_rate: appliedFeeRate })
+                .where(eq(bidsTable.id, bidId));
 
               await tx.insert(requestMessagesTable).values({
                 request_id: bid.request_id,
@@ -356,7 +389,10 @@ app.post(
 
               if (request && operator && operatorEmail) {
                 const contractValue = bid.price_per_kg * (request.quantity_kg ?? 0);
-                const feeAmountCents = Math.round(contractValue * 0.09 * 100);
+                const feeAmountCents = calculateFees(
+                  Math.round(contractValue * 100),
+                  resolveFeeRate(operator.platform_fee_override),
+                ).feeCents;
                 const { sendFeeReceiptEmail } = await import("./lib/email");
                 await sendFeeReceiptEmail({
                   operatorEmail,

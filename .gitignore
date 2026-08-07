@@ -1,1 +1,52 @@
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# Never commit real credentials. .env.example is the documented template.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+gcs-key.json
+service-account*.json
+
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ── Build output ─────────────────────────────────────────────────────────────
 artifacts/api-server/dist/
+artifacts/lyodex/dist/
+artifacts/mockup-sandbox/dist/
+lib/*/dist/
+*.tsbuildinfo
+
+# ── Local tooling / OS noise ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+.cache/
+.expo/
+
+# ── Replit workspace state (not source) ──────────────────────────────────────
+.config/
+.local/
+
+# Identifiants admin générés localement — ne jamais commiter
+.admin-credentials.txt
+
+# Notes de travail — prix concurrents, contacts, journal d appels.
+# Le depot est public : ne jamais commiter ceci.
+QUESTIONNAIRE.md
+
+# Raw upstream catalogues re-fetchable with scripts/market-research/fd-crawl.mjs
+data/market-research/catalog-cache/
+
+# ── Restes de migration ────────────────────────────────────────────────────
+# lyodex-replit-upload/ etait une copie complete du projet (14,6 Mo) datant du
+# passage hors Replit : deux arborescences artifacts/ dans le meme depot, sans
+# rien pour dire laquelle etait vivante.
+# .migration-backup/ venait d'un projet Next.js anterieur. Ses identifiants et
+# ses documents de planification ont ete deplaces hors du depot avant retrait.
+# attached_assets/ contenait des captures d'ecran collees dans l'espace Replit.
+lyodex-replit-upload/
+.migration-backup/
+attached_assets/

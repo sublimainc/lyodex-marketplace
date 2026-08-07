@@ -45,7 +45,9 @@ export const ListOperatorsResponseItem = zod.object({
   "last_verified_date": zod.string().nullish(),
   "food_market_focus": zod.boolean().nullish(),
   "pharmaceutical_focus": zod.boolean().nullish(),
-  "contact_page_url": zod.string().nullish()
+  "contact_page_url": zod.string().nullish(),
+  "gps_lat": zod.number().nullish().describe('Approximate latitude, city level. Not the exact facility address.'),
+  "gps_lng": zod.number().nullish().describe('Approximate longitude, city level. Not the exact facility address.')
 })
 export const ListOperatorsResponse = zod.array(ListOperatorsResponseItem)
 
@@ -92,7 +94,9 @@ export const GetMyOperatorProfileResponse = zod.object({
   "last_verified_date": zod.string().nullish(),
   "food_market_focus": zod.boolean().nullish(),
   "pharmaceutical_focus": zod.boolean().nullish(),
-  "contact_page_url": zod.string().nullish()
+  "contact_page_url": zod.string().nullish(),
+  "gps_lat": zod.number().nullish().describe('Approximate latitude, city level. Not the exact facility address.'),
+  "gps_lng": zod.number().nullish().describe('Approximate longitude, city level. Not the exact facility address.')
 })
 
 
@@ -176,7 +180,9 @@ export const UpdateMyOperatorProfileResponse = zod.object({
   "last_verified_date": zod.string().nullish(),
   "food_market_focus": zod.boolean().nullish(),
   "pharmaceutical_focus": zod.boolean().nullish(),
-  "contact_page_url": zod.string().nullish()
+  "contact_page_url": zod.string().nullish(),
+  "gps_lat": zod.number().nullish().describe('Approximate latitude, city level. Not the exact facility address.'),
+  "gps_lng": zod.number().nullish().describe('Approximate longitude, city level. Not the exact facility address.')
 })
 
 
@@ -212,7 +218,9 @@ export const GetOperatorResponse = zod.object({
   "last_verified_date": zod.string().nullish(),
   "food_market_focus": zod.boolean().nullish(),
   "pharmaceutical_focus": zod.boolean().nullish(),
-  "contact_page_url": zod.string().nullish()
+  "contact_page_url": zod.string().nullish(),
+  "gps_lat": zod.number().nullish().describe('Approximate latitude, city level. Not the exact facility address.'),
+  "gps_lng": zod.number().nullish().describe('Approximate longitude, city level. Not the exact facility address.')
 })
 
 
@@ -378,7 +386,9 @@ export const PatchOperatorCertificationResponse = zod.object({
   "last_verified_date": zod.string().nullish(),
   "food_market_focus": zod.boolean().nullish(),
   "pharmaceutical_focus": zod.boolean().nullish(),
-  "contact_page_url": zod.string().nullish()
+  "contact_page_url": zod.string().nullish(),
+  "gps_lat": zod.number().nullish().describe('Approximate latitude, city level. Not the exact facility address.'),
+  "gps_lng": zod.number().nullish().describe('Approximate longitude, city level. Not the exact facility address.')
 })
 
 

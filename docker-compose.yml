@@ -1,0 +1,50 @@
+# LyoDex — self-contained stack (app + database).
+#
+#   cp .env.example .env    # fill in JWT_SECRET, Stripe keys, SMTP…
+#   docker compose up --build
+#
+# The app waits for Postgres to pass its health check before starting.
+# Schema is applied separately (see DEPLOYMENT.md): `pnpm --filter @workspace/db run push`.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lyodex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-lyodex}
+    volumes:
+      - lyodex-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lyodex} -d ${POSTGRES_DB:-lyodex}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      # Bound to the loopback interface only. This lets you run the API from
+      # the host (pnpm dev) and connect with a SQL client, without exposing the
+      # database to your local network — "5432:5432" alone would listen on
+      # 0.0.0.0 and make it reachable by anyone on the same Wi-Fi.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      # Overrides any DATABASE_URL in .env so the app targets the compose db.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lyodex}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-lyodex}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+volumes:
+  lyodex-db:

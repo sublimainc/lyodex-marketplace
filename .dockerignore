@@ -1,0 +1,35 @@
+# Build inputs only — everything else bloats the context or leaks secrets.
+node_modules
+**/node_modules
+**/dist
+.git
+.gitignore
+
+# Secrets — never copy credentials into the build context. These mirror
+# .gitignore: even though the final image only takes dist/ and node_modules,
+# anything here would otherwise sit in the intermediate build layers and cache.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+gcs-key.json
+service-account*.json
+
+# Replit workspace state and agent scratch space
+.replit
+.replitignore
+.config
+.local
+.agents
+.migration-backup
+lyodex-replit-upload
+
+# Not part of the server deployment
+artifacts/lyodex-mobile
+artifacts/mockup-sandbox
+attached_assets
+
+# Docs
+*.md
+!replit.md
