@@ -68,7 +68,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
-      "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      // "@assets" pointed at attached_assets/, a folder of screenshots pasted
+      // into the Replit workspace. Nothing under src/ ever imported through it,
+      // and the folder is gone — an alias to a missing directory is a trap for
+      // whoever tries to use it next.
     },
     dedupe: ["react", "react-dom"],
   },
